@@ -2,11 +2,13 @@ var APIName = APIName || (function () {
     'use strict';
     var stateName = 'PaladinAura',
         states = [
-            ['active']
+            ['active'],
+            ['diagonal_calc_override', ['none', 'foure', 'threefive', 'pythagorean', 'manhattan'], 'none']
         ],
         name = 'Paladin Aura',
         nameError = name + ' ERROR',
         nameLog = name + ': ',
+        apiCall = `!pa`,
         
         playerName,
         playerID,
@@ -17,7 +19,15 @@ var APIName = APIName || (function () {
                 macrosArr = [
                     [
                         'PaladinAuraHelp',
-                        '!pa help'
+                        `${apiCall} help`
+                    ],
+                    [
+                        'PaladinAuraToggle',
+                        `${apiCall}`
+                    ],
+                    [
+                        'PaladinAuraConfig',
+                        `${apiCall} config`
                     ]
                 ];
             _.each(macrosArr, macro => {
@@ -46,12 +56,15 @@ var APIName = APIName || (function () {
         showHelp = function () {
             let commandsArr = [
                 [
-                    '!pa help',
-                    'Lists all commands, their parameters, and their usage.',
-                    `${code('!pa')} ${code('help')}`
+                    `${apiCall} help`,
+                    'Lists all commands, their parameters, and their usage.'
                 ],
                 [
-                    '!pa',
+                    `${apiCall} config`,
+                    'Shows config and buttons that change settings.'
+                ],
+                [
+                    `${apiCall}`,
                     'Toggles the Paladin Aura API on and off.'
                 ]
             ];
@@ -80,16 +93,60 @@ var APIName = APIName || (function () {
             })
             return;
         },
+
+        showConfig = function () {
+            let output = `&{template:default} {{name=${name} Config}}`;
+            _.each(states, value => {
+                let acceptableValues = value[1] ? value[1] : [true, false],
+                    defaultValue = value[2] ? value[2] : true,
+                    currentValue = `${getState(value[0])}`,
+                    stringVals = valuesToString(acceptableValues, defaultValue);
+                output += `{{${value[0]}=[${currentValue}](${apiCall} config ${value[0]} ?{New ${value[0]} value${stringVals}})}}`;
+            })
+            toPlayer(output);
+            return;
+
+            function valuesToString(values, defaultValue) {
+                let output = '',
+                    index = values.indexOf(defaultValue);
+                if (index !== -1) {
+                    let val = values.splice(index, 1);
+                    values.unshift(val);
+                }
+                _.each(values, value => {
+                    output += `|${value}`;
+                })
+                return output;
+            }
+        },
+
+        setConfig = function (parts) {
+            toPlayer(`**${parts[2]}** has been changed **from ${state[`${stateName}_${parts[2]}`]} to ${parts[3]}**.`, true);
+            state[`${stateName}_${parts[2]}`] = parts[3];
+            showConfig();
+            return;
+        },
         
         handleInput = function (msg) {
             playerName = msg.who.split(' ', 1)[0];
             playerID = msg.playerid;
-            if ( msg.type === 'api' && msg.content.split(' ')[0] === '!pa' ) {
+            if ( msg.type === 'api' && msg.content.split(' ')[0] === `${apiCall}` ) {
                 var parts = msg.content.split(' ');
                 if ( parts[1] === 'help' ) {
                     showHelp();
-                } else if ( !parts[1] && playerIsGM(playerID) ) {
-                    toggleActive();
+                } else if ( playerIsGM(playerID) ) {
+                    if ( !parts[1] ) {
+                        toggleActive();
+                    } else if ( parts[1] == 'config') {
+                        if ( parts[2] ) {
+                            setConfig(parts);
+                        } else {
+                            showConfig();
+                        }
+                    }
+                } else if ( !playerIsGM(playerID) ) {
+                    error(`Sorry ${playerName}, but this command is only accessible to GMs.`, 0)
+                    return;
                 }
             }
         },
@@ -162,7 +219,19 @@ var APIName = APIName || (function () {
                     }
 
                     function distCalc (distA, distB) {
-                        return distA + (Math.floor((distB / pixelsPerSquare) / 2) * pixelsPerSquare);
+                        let diagonal = getState('diagonal_calc_override') == 'none' ? page.get('diagonaltype') : getState('diagonal_calc_override');
+                        if (diagonal == 'threefive') {
+                            return distA + ( Math.floor((distB / pixelsPerSquare) / 2) * pixelsPerSquare );
+                        }
+                        if (diagonal == 'foure') {
+                            return distA;
+                        }
+                        if (diagonal == 'pythagorean') {
+                            return Math.round( Math.sqrt( Math.pow(distA / pixelsPerSquare, 2) + Math.pow(distB / pixelsPerSquare, 2) ) ) * pixelsPerSquare;
+                        }
+                        if (diagonal == 'manhattan') {
+                            return distA + distB;
+                        }
                     }
                 })
             })
@@ -267,7 +336,7 @@ var APIName = APIName || (function () {
                 let values = variable[1] ? variable[1] : [true, false],
                     defaultValue = variable[2] ? variable[2] : true;
                 if (!state[`${stateName}_${variable[0]}`] || !values.includes(state[`${stateName}_${variable[0]}`])) {
-                    error(`**'${variable[0]}'** value **was '${state[`${stateName}_${variable[0]}`]}'** but has now been **set to its default** value, '${defaultValue}'.`, -1);
+                    error(`'${variable[0]}'** value **was '${state[`${stateName}_${variable[0]}`]}'** but has now been **set to its default** value, '${defaultValue}'.`, -1);
                     state[`${stateName}_${variable[0]}`] = defaultValue;
                 }
             })
