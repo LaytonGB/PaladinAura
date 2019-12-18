@@ -206,12 +206,6 @@ var APIName = APIName || (function () {
                 if (obj.id) { return false; }
                 else { return true; }
             });
-/* 
-    for each of the player tokens
-    cycle through the available bonuses
-    keep the highest and apply it
- */
-
             _.each(playerTokens, token => {
                 let saveBonus;
                 _.each(auraTokens, paladin => {
@@ -241,38 +235,9 @@ var APIName = APIName || (function () {
                         }
                     }
                 });
+                saveBonus = saveBonus ? saveBonus : 0;
                 setBuff(token, `paladin_buff`, saveBonus);
             });
-
-            // _.each(auraTokens, paladin => {
-            //     _.each(playerTokens, token => {
-            //         let distLimit = (paladin.radius / unitsPerSquare) * pixelsPerSquare,
-            //             xDist = Math.abs(token.get('left') - paladin.left),
-            //             yDist = Math.abs(token.get('top') - paladin.top),
-            //             distTotal = xDist >= yDist ? distCalc(xDist, yDist) : distCalc(yDist, xDist);
-            //         if (distTotal <= distLimit) {
-            //             setBuff(token, `paladin_buff`, paladin.chaBonus);
-            //         } else {
-            //             setBuff(token, `paladin_buff`, 0);
-            //         }
-
-            //         function distCalc (distA, distB) {
-            //             let diagonal = getState('diagonal_calc_override') == 'none' ? page.get('diagonaltype') : getState('diagonal_calc_override');
-            //             if (diagonal == 'threefive') {
-            //                 return distA + ( Math.floor((distB / pixelsPerSquare) / 2) * pixelsPerSquare );
-            //             }
-            //             if (diagonal == 'foure') {
-            //                 return distA;
-            //             }
-            //             if (diagonal == 'pythagorean') {
-            //                 return Math.round( Math.sqrt( Math.pow(distA / pixelsPerSquare, 2) + Math.pow(distB / pixelsPerSquare, 2) ) ) * pixelsPerSquare;
-            //             }
-            //             if (diagonal == 'manhattan') {
-            //                 return distA + distB;
-            //             }
-            //         }
-            //     })
-            // })
         },
 
         setBuff = function (token, attrName, value) {
