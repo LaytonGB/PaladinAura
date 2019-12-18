@@ -220,7 +220,7 @@ var APIName = APIName || (function () {
                         yDist = Math.abs(token.get('top') - paladin.top),
                         distTotal = xDist >= yDist ? distCalc(xDist, yDist) : distCalc(yDist, xDist);
                     if (distTotal <= distLimit) {
-                        saveBonus = paladin.chaBonus;
+                        saveBonus = saveBonus >= paladin.chaBonus ? saveBonus : paladin.chaBonus;
                     } else {
                         saveBonus = saveBonus ? saveBonus : 0;
                     }
