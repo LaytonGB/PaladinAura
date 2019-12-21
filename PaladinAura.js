@@ -261,7 +261,7 @@ var APIName = APIName || (function () {
                 }
                 let attrValue = attr.get('current');
                 if (value != attrValue) {
-                    let adjust = value - attrValue;
+                    let adjust = +value - +attrValue;
                     attr.setWithWorker('current', value);
                     modAttr(token, 'globalsavemod', adjust);
                 }
@@ -286,7 +286,7 @@ var APIName = APIName || (function () {
                 return;
             } else {
                 let attrValue = attr.get('current'),
-                    adjust = attrValue + value;
+                    adjust = +attrValue + +value;
                 attr.setWithWorker('current', adjust);
                 return;
             }
