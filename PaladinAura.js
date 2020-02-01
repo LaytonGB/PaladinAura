@@ -1,4 +1,4 @@
-var APIName = APIName || (function () {
+var PaladinAura = PaladinAura || (function () {
     'use strict';
     var stateName = 'PaladinAura',
         states = [
@@ -358,7 +358,7 @@ var APIName = APIName || (function () {
 }())
 
 on('ready', function () {
-    APIName.CheckMacros();
-    APIName.StartupChecks();
-    APIName.RegisterEventHandlers();
+    PaladinAura.CheckMacros();
+    PaladinAura.StartupChecks();
+    PaladinAura.RegisterEventHandlers();
 })
