@@ -1,7 +1,7 @@
 /* eslint-disable no-undef */
 
 interface StateForm {
-  name: State;
+  name: StateVar;
   acceptables?: string[];
   default?: string;
   ignore?: boolean;
@@ -17,10 +17,10 @@ interface HelpForm {
   name: string;
   desc: string[];
   example?: string[];
-  link?: State;
+  link?: StateVar;
 }
 
-enum State {
+enum StateVar {
   active = "active",
   diagOverride = "diagonal_calc_override"
 }
@@ -28,9 +28,9 @@ enum State {
 const PaladinAura = (() => {
   const stateName = "PaladinAura_";
   const states: StateForm[] = [
-    { name: State.active },
+    { name: StateVar.active },
     {
-      name: State.diagOverride,
+      name: StateVar.diagOverride,
       acceptables: ["none", "foure", "threefive", "pythagorean", "manhattan"],
       default: "none"
     }
@@ -85,7 +85,7 @@ const PaladinAura = (() => {
         toChat(
           `**Macro '${macro.name}' was created and assigned to ${gm.get(
             "_displayname"
-          )}.**`,
+          ) + " ".split(" ", 1)[0]}.**`,
           true
         );
       }
@@ -105,7 +105,7 @@ const PaladinAura = (() => {
       {
         name: `${apiCall}`,
         desc: ["Toggles the Paladin Aura API on and off."],
-        link: State.active
+        link: StateVar.active
       }
     ];
     commandsArr.forEach(command => {
@@ -120,7 +120,7 @@ const PaladinAura = (() => {
       if (command.link) {
         output += "{{Current Setting=" + getState(command.link) + "}}";
       }
-      toChat(output, undefined, playerID);
+      toChat(output, undefined, playerName);
     });
   };
 
@@ -135,7 +135,7 @@ const PaladinAura = (() => {
       const stringVals = valuesToString(acceptableValues, defaultValue);
       output += `{{${s.name}=[${currentValue}](${apiCall} config ${s.name} ?{New ${s.name} value${stringVals}})}}`;
     });
-    toChat(output, undefined, playerID);
+    toChat(output, undefined, playerName);
 
     function valuesToString(values: string[], defaultValue: string) {
       let output = "";
@@ -157,7 +157,7 @@ const PaladinAura = (() => {
         state[`${stateName}_${parts[2]}`]
       } to ${parts[3]}**.`,
       true,
-      playerID
+      playerName
     );
     state[`${stateName}_${parts[2]}`] = parts[3];
     showConfig();
@@ -168,7 +168,7 @@ const PaladinAura = (() => {
     if (msg.type === "api" && parts[0] === apiCall) {
       playerName = msg.who.split(" ", 1)[0];
       playerID = msg.playerid;
-      if (["", "config", "help"].includes(parts[1])) {
+      if ([undefined, "config", "help"].includes(parts[1])) {
         if (parts[1] === "help") {
           showHelp();
         } else if (playerIsGM(playerID)) {
@@ -191,14 +191,14 @@ const PaladinAura = (() => {
   };
 
   const toggleActive = () => {
-    state[stateName + State.active] = !getState(State.active);
+    state[stateName + StateVar.active] = !getState(StateVar.active);
     toChat(
-      `**Paladin Aura ${getState(State.active) ? "Enabled" : "Disabled"}.**`,
-      getState(State.active)
+      `**Paladin Aura ${getState(StateVar.active) ? "Enabled" : "Disabled"}.**`,
+      getState(StateVar.active)
     );
   };
 
-  const getState = (value: State) => {
+  const getState = (value: StateVar) => {
     return state[stateName + value];
   };
 
