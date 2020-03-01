@@ -1,7 +1,8 @@
 ---
+
 name: Bug report
 about: Create a report to help me squish the bugs.
-title: "[BUG] [CRASH] "
+title: "[BUG][crash] "
 labels: bug
 assignees: LaytonGB
 ---**Error Code / Crash Message**
