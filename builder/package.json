@@ -5,8 +5,8 @@
   "main": "PaladinAura.ts",
   "scripts": {
     "lint": "./node_modules/.bin/eslint --fix './**/*.ts'",
-    "format": "prettier --write './**/*.ts' 'README.md' '.github/**/*.md' '.eslintrc.json' 'package-lock.json' 'package.json'",
-    "build": "tsc --module amd --outFile ./PaladinAura.js ./src/main.ts",
+    "format": "prettier --write './**/*.ts' '.eslintrc.json' 'package-lock.json' 'package.json'",
+    "build": "tsc --module amd --outFile ../PaladinAura.js ./main.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -23,8 +23,9 @@
   },
   "homepage": "https://github.com/LaytonGB/PaladinAura#readme",
   "dependencies": {
+    "@types/cheerio": "^0.22.16",
     "@types/mock20": "^1.0.2",
-    "@types/roll20": "^1.0.1",
+    "@types/roll20": "^1.0.3",
     "@types/roll20-commandshell": "^1.0.0"
   },
   "devDependencies": {

@@ -1,0 +1,9 @@
+{
+  "compilerOptions": {
+      "types" : [
+        "node",
+        "roll20",
+        "cheerio"
+      ]
+  }
+}

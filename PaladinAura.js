@@ -1,8 +1,8 @@
 /* eslint-disable no-undef */
 var StateVar;
 (function (StateVar) {
-    StateVar.active = "active";
-    StateVar.diagOverride = "diagonal_calc_override";
+    StateVar["active"] = "active";
+    StateVar["diagOverride"] = "diagonal_calc_override";
 })(StateVar || (StateVar = {}));
 var PaladinAura = (function () {
     var stateName = "PaladinAura_";
@@ -100,7 +100,7 @@ var PaladinAura = (function () {
             var acceptableValues = s.acceptables
                 ? s.acceptables
                 : ["true", "false"];
-            var defaultValue = s.default ? s.default : "true";
+            var defaultValue = s["default"] ? s["default"] : "true";
             var currentValue = getState(s.name);
             var stringVals = valuesToString(acceptableValues, defaultValue);
             output += "{{" + s.name + "=[" + currentValue + "](" + apiCall + " config " + s.name + " ?{New " + s.name + " value" + stringVals + "})}}";
@@ -192,7 +192,7 @@ var PaladinAura = (function () {
     var startupChecks = function () {
         states.forEach(function (s) {
             var acceptables = s.acceptables ? s.acceptables : ["true", "false"];
-            var defaultVal = s.default ? s.default : "true";
+            var defaultVal = s["default"] ? s["default"] : "true";
             if (!state[stateName + s.name] ||
                 !acceptables.includes(state[stateName + s.name])) {
                 error("**'" +
