@@ -155,6 +155,146 @@ var PaladinAura = (function () {
             }
         }
     };
+    var paladinCheck = function () {
+        var page = getObj("page", Campaign().get("playerpageid")), pixelsPerSquare = page.get("snapping_increment") * 70, unitsPerSquare = page.get("scale_number"), allTokens = findObjs({
+            _type: "graphic",
+            _subtype: "token",
+            _pageid: Campaign().get("playerpageid")
+        }), playerTokens = allTokens.filter(function (token) {
+            var charID = token.get("represents");
+            return !getObj("character", charID)
+                ? false
+                : +getAttrByName(charID, "npc") == 1
+                    ? false
+                    : true;
+        });
+        if (page.get("scale_units") != "ft")
+            return;
+        var auraTokens = playerTokens.map(function (token) {
+            var charID = token.get("represents"), output;
+            if (getAttrByName(charID, "class")
+                .toLowerCase()
+                .includes("paladin") &&
+                +getAttrByName(charID, "base_level") >= 6 &&
+                +getAttrByName(charID, "hp") > 0) {
+                output = setOutput("base_level");
+            }
+            else {
+                ["multiclass1", "multiclass2", "multiclass3"].forEach(function (className) {
+                    if (+getAttrByName(charID, className + "_flag") == 1) {
+                        if (getAttrByName(charID, className)
+                            .toLowerCase()
+                            .includes("paladin") &&
+                            +getAttrByName(charID, className + "_lvl") >= 6 &&
+                            +getAttrByName(charID, "hp") > 0) {
+                            output = setOutput(className + "_lvl");
+                        }
+                    }
+                });
+            }
+            if (output) {
+                return output;
+            }
+            else {
+                return token;
+            }
+            function setOutput(levelAttr) {
+                var output = {
+                    token: token,
+                    level: +getAttrByName(charID, levelAttr),
+                    left: +token.get("left"),
+                    top: +token.get("top"),
+                    chaBonus: +getAttrByName(charID, "charisma_mod"),
+                    radius: +getAttrByName(charID, levelAttr) >= 18 ? 30 : 10
+                };
+                return output;
+            }
+        });
+        var paladinTokens = auraTokens.filter(function (obj) {
+            return obj.token !== undefined;
+        });
+        playerTokens.forEach(function (token) {
+            var saveBonus;
+            paladinTokens.forEach(function (paladin) {
+                var distLimit = (paladin.radius / unitsPerSquare) * pixelsPerSquare, xDist = Math.abs(token.get("left") - paladin.left), yDist = Math.abs(token.get("top") - paladin.top), distTotal = xDist >= yDist ? distCalc(xDist, yDist) : distCalc(yDist, xDist);
+                if (distTotal <= distLimit) {
+                    saveBonus =
+                        saveBonus >= paladin.chaBonus ? saveBonus : paladin.chaBonus;
+                }
+                else {
+                    saveBonus = saveBonus ? saveBonus : 0;
+                }
+                function distCalc(distA, distB) {
+                    var diagonal = getState(StateVar.diagOverride) == "none"
+                        ? page.get("diagonaltype")
+                        : getState(StateVar.diagOverride);
+                    if (diagonal == "threefive") {
+                        return (distA + Math.floor(distB / pixelsPerSquare / 2) * pixelsPerSquare);
+                    }
+                    if (diagonal == "foure") {
+                        return distA;
+                    }
+                    if (diagonal == "pythagorean") {
+                        return (Math.round(Math.sqrt(Math.pow(distA / pixelsPerSquare, 2) +
+                            Math.pow(distB / pixelsPerSquare, 2))) * pixelsPerSquare);
+                    }
+                    if (diagonal == "manhattan") {
+                        return distA + distB;
+                    }
+                }
+            });
+            saveBonus = saveBonus ? saveBonus : 0;
+            setBuff(token, "paladin_buff", saveBonus);
+        });
+    };
+    var setBuff = function (token, attrName, value) {
+        var charID = token.get("represents"), char = getObj("character", charID);
+        if (!char) {
+            error("Player Character '" + token.get("name") + "' had no character sheet.", 2);
+            return;
+        }
+        else {
+            var attr = findObjs({
+                _type: "attribute",
+                _characterid: charID,
+                name: attrName
+            })[0];
+            if (!attr) {
+                attr = createObj("attribute", {
+                    _characterid: charID,
+                    name: attrName,
+                    current: "0"
+                });
+            }
+            var attrValue = attr.get("current");
+            if (value != attrValue) {
+                var adjust = +value - +attrValue;
+                attr.setWithWorker("current", value.toString());
+                modAttr(token, "globalsavemod", adjust);
+            }
+        }
+        return;
+    };
+    var modAttr = function (token, attrName, value) {
+        var charID = token.get("represents"), attr = findObjs({
+            _type: "attribute",
+            _characterid: charID,
+            name: attrName
+        })[0];
+        if (!attr) {
+            attr = createObj("attribute", {
+                _characterid: charID,
+                name: attrName
+            });
+            attr.setWithWorker("current", value.toString());
+            return;
+        }
+        else {
+            var attrValue = attr.get("current"), adjust = +attrValue + +value;
+            attr.setWithWorker("current", adjust.toString());
+            return;
+        }
+    };
     var toggleActive = function () {
         state[stateName + StateVar.active] = !getState(StateVar.active);
         toChat("**Paladin Aura " + (getState(StateVar.active) ? "Enabled" : "Disabled") + ".**", getState(StateVar.active));
@@ -208,7 +348,7 @@ var PaladinAura = (function () {
     };
     var registerEventHandlers = function () {
         on("chat:message", handleInput);
-        // on("change:graphic", paladinCheck);
+        on("change:graphic", paladinCheck);
     };
     return {
         CheckMacros: checkMacros,

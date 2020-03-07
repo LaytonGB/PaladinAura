@@ -1,12 +1,12 @@
 {
   "env": {
+    "browser": true,
     "es6": true
   },
-  "extends": ["standard", "eslint:recommended", "prettier"],
+  "extends": ["prettier"],
   "globals": {
     "Atomics": "readonly",
-    "SharedArrayBuffer": "readonly",
-    "_": false
+    "SharedArrayBuffer": "readonly"
   },
   "parser": "@typescript-eslint/parser",
   "parserOptions": {
@@ -15,15 +15,9 @@
   },
   "plugins": ["@typescript-eslint"],
   "rules": {
-    // note you must disable the base rule as it can report incorrect errors
-    "no-unused-vars": "off",
-    "@typescript-eslint/no-unused-vars": [
-      "error",
-      {
-        "vars": "all",
-        "args": "after-used",
-        "ignoreRestSiblings": false
-      }
-    ]
+    "indent": ["error", 4],
+    "linebreak-style": ["error", "windows"],
+    "quotes": ["error", "double"],
+    "semi": ["error", "always"]
   }
 }

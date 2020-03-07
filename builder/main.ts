@@ -25,6 +25,15 @@ enum StateVar {
   diagOverride = "diagonal_calc_override"
 }
 
+interface PaladinObject {
+  token: Graphic;
+  level: number;
+  left: number;
+  top: number;
+  chaBonus: number;
+  radius: number;
+}
+
 const PaladinAura = (() => {
   const stateName = "PaladinAura_";
   const states: StateForm[] = [
@@ -190,6 +199,181 @@ const PaladinAura = (() => {
     }
   };
 
+  const paladinCheck = () => {
+    let page = getObj("page", Campaign().get("playerpageid")),
+      pixelsPerSquare = page.get("snapping_increment") * 70,
+      unitsPerSquare = page.get("scale_number"),
+      allTokens = findObjs({
+        _type: "graphic",
+        _subtype: "token",
+        _pageid: Campaign().get("playerpageid")
+      }) as Graphic[],
+      playerTokens = allTokens.filter(token => {
+        let charID = token.get("represents");
+        return !getObj("character", charID)
+          ? false
+          : +getAttrByName(charID, "npc") == 1
+          ? false
+          : true;
+      });
+    if (page.get("scale_units") != "ft") return;
+    let auraTokens = playerTokens.map(token => {
+      let charID = token.get("represents"),
+        output: PaladinObject;
+      if (
+        getAttrByName(charID, "class")
+          .toLowerCase()
+          .includes("paladin") &&
+        +getAttrByName(charID, "base_level") >= 6 &&
+        +getAttrByName(charID, "hp") > 0
+      ) {
+        output = setOutput("base_level");
+      } else {
+        ["multiclass1", "multiclass2", "multiclass3"].forEach(className => {
+          if (+getAttrByName(charID, className + "_flag") == 1) {
+            if (
+              getAttrByName(charID, className)
+                .toLowerCase()
+                .includes("paladin") &&
+              +getAttrByName(charID, className + "_lvl") >= 6 &&
+              +getAttrByName(charID, "hp") > 0
+            ) {
+              output = setOutput(className + "_lvl");
+            }
+          }
+        });
+      }
+      if (output) {
+        return output;
+      } else {
+        return token;
+      }
+
+      function setOutput(levelAttr: string): PaladinObject {
+        let output = {
+          token: token,
+          level: +getAttrByName(charID, levelAttr),
+          left: +token.get("left"),
+          top: +token.get("top"),
+          chaBonus: +getAttrByName(charID, "charisma_mod"),
+          radius: +getAttrByName(charID, levelAttr) >= 18 ? 30 : 10
+        };
+        return output;
+      }
+    });
+    let paladinTokens = auraTokens.filter((obj: any) => {
+      return obj.token !== undefined;
+    }) as PaladinObject[];
+    playerTokens.forEach(token => {
+      let saveBonus: number;
+      paladinTokens.forEach(paladin => {
+        let distLimit = (paladin.radius / unitsPerSquare) * pixelsPerSquare,
+          xDist = Math.abs(token.get("left") - paladin.left),
+          yDist = Math.abs(token.get("top") - paladin.top),
+          distTotal =
+            xDist >= yDist ? distCalc(xDist, yDist) : distCalc(yDist, xDist);
+        if (distTotal <= distLimit) {
+          saveBonus =
+            saveBonus >= paladin.chaBonus ? saveBonus : paladin.chaBonus;
+        } else {
+          saveBonus = saveBonus ? saveBonus : 0;
+        }
+
+        function distCalc(distA: number, distB: number) {
+          let diagonal =
+            getState(StateVar.diagOverride) == "none"
+              ? page.get("diagonaltype")
+              : getState(StateVar.diagOverride);
+          if (diagonal == "threefive") {
+            return (
+              distA + Math.floor(distB / pixelsPerSquare / 2) * pixelsPerSquare
+            );
+          }
+          if (diagonal == "foure") {
+            return distA;
+          }
+          if (diagonal == "pythagorean") {
+            return (
+              Math.round(
+                Math.sqrt(
+                  Math.pow(distA / pixelsPerSquare, 2) +
+                    Math.pow(distB / pixelsPerSquare, 2)
+                )
+              ) * pixelsPerSquare
+            );
+          }
+          if (diagonal == "manhattan") {
+            return distA + distB;
+          }
+        }
+      });
+      saveBonus = saveBonus ? saveBonus : 0;
+      setBuff(token, "paladin_buff", saveBonus);
+    });
+  };
+
+  const setBuff = (
+    token: Graphic,
+    attrName: string,
+    value: string | number
+  ) => {
+    let charID = token.get("represents"),
+      char = getObj("character", charID);
+    if (!char) {
+      error(
+        `Player Character '${token.get("name")}' had no character sheet.`,
+        2
+      );
+      return;
+    } else {
+      let attr = findObjs({
+        _type: "attribute",
+        _characterid: charID,
+        name: attrName
+      })[0] as Attribute;
+      if (!attr) {
+        attr = createObj("attribute", {
+          _characterid: charID,
+          name: attrName,
+          current: "0"
+        });
+      }
+      let attrValue = attr.get("current");
+      if (value != attrValue) {
+        let adjust = +value - +attrValue;
+        attr.setWithWorker("current", value.toString());
+        modAttr(token, "globalsavemod", adjust);
+      }
+    }
+    return;
+  };
+
+  const modAttr = (
+    token: { get: (arg0: string) => any },
+    attrName: string,
+    value: string | number
+  ) => {
+    let charID = token.get("represents"),
+      attr = findObjs({
+        _type: "attribute",
+        _characterid: charID,
+        name: attrName
+      })[0] as Attribute;
+    if (!attr) {
+      attr = createObj("attribute", {
+        _characterid: charID,
+        name: attrName
+      });
+      attr.setWithWorker("current", value.toString());
+      return;
+    } else {
+      let attrValue = attr.get("current"),
+        adjust = +attrValue + +value;
+      attr.setWithWorker("current", adjust.toString());
+      return;
+    }
+  };
+
   const toggleActive = () => {
     state[stateName + StateVar.active] = !getState(StateVar.active);
     toChat(
@@ -267,7 +451,7 @@ const PaladinAura = (() => {
 
   const registerEventHandlers = () => {
     on("chat:message", handleInput);
-    // on("change:graphic", paladinCheck);
+    on("change:graphic", paladinCheck);
   };
 
   return {
