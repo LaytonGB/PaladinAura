@@ -2,7 +2,7 @@
   "name": "paladinaura",
   "version": "1.0.0",
   "description": "A Roll20 API for 5th Edition D&amp;D to quickly apply and remove the bonuses awarded to those around Paladins of 6th level or above.",
-  "main": "PaladinAura.ts",
+  "main": "main.ts",
   "scripts": {
     "lint": "./node_modules/.bin/eslint --fix './**/*.ts'",
     "format": "prettier --write './**/*.ts' '.eslintrc.json' 'package-lock.json' 'package.json'",
@@ -24,9 +24,9 @@
   "homepage": "https://github.com/LaytonGB/PaladinAura#readme",
   "dependencies": {
     "@types/cheerio": "^0.22.16",
-    "@types/mock20": "^1.0.2",
-    "@types/roll20": "^1.0.3",
-    "@types/roll20-commandshell": "^1.0.0"
+    "@types/mock20": "git+https://github.com/Carl-Hugo/types-mock20.git",
+    "@types/roll20": "git+https://github.com/LaytonGB/types-roll20.git",
+    "@types/roll20-commandshell": "git+https://github.com/Carl-Hugo/types-roll20-CommandShell.git"
   },
   "devDependencies": {
     "@types/node": "^13.7.7",

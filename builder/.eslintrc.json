@@ -3,7 +3,7 @@
     "browser": true,
     "es6": true
   },
-  "extends": ["prettier"],
+  "extends": "prettier",
   "globals": {
     "Atomics": "readonly",
     "SharedArrayBuffer": "readonly"
@@ -15,9 +15,9 @@
   },
   "plugins": ["@typescript-eslint"],
   "rules": {
-    "indent": ["error", 4],
+    "indent": ["error", 2],
     "linebreak-style": ["error", "windows"],
-    "quotes": ["error", "double"],
+    "quotes": ["error", "single", "avoid-escape"],
     "semi": ["error", "always"]
   }
 }
