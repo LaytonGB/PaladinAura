@@ -1,8 +1,12 @@
 # PaladinAura
 
-A roll20 API for 5th Edition D&D that automatically adjusts the saving throw bonuses of Paladins and those close to them.
+A roll20 API for 5E D&D that automatically adjusts the saving throw bonuses of Paladins and those close to them.
 
 The API takes into account the paladin's level, and whether the bonus has already been applied. After rigorous testing there have been no accidental double-applies of bonuses.
+
+**WARNING:** This API only works with [Roll20's 5E OGL D&D Character Sheet](https://wiki.roll20.net/5th_Edition_OGL_by_Roll20).
+
+### [Problems and Feedback](#Feedback)
 
 ## Installation
 
@@ -17,7 +21,7 @@ Once there do the following:
 
 ## How to Use
 
-The API should be ready to go (by default 5th Edition rulings) immediately. However, if you wish to customize the system, or even turn it off, you can do so from the in-game commands.
+The API should be ready to go immediately. However, if you wish to customize the system, or even turn it off, you can do so from the in-game commands (see [Configuration](#Settings-/-Configuration) below).
 
 ### First time load
 
@@ -37,10 +41,14 @@ There are only two settings that can be configured (currently).
 
 2. **diagonal_calc_override:** This setting overrides the roll20 map settings for diagonal calculations. It has five acceptable values:
 
-- **none:** Do not override any settings / use the page's configuration.
-- **foure:** Use 4th / 5th Edition D&D measuring.<br>(See image 1 of the reference below)
-- **threefive:** Use 3rd and below Edition D&D measuring.<br>(See image 3 of the reference below)
+- **none:** Do not override any settings / use the page's configuration. (**Default and Recommended**)
+- **foure:** Use 4E / 5E D&D measuring.<br>(See image 1 of the reference below)
+- **threefive:** Use 3E and below D&D measuring.<br>(See image 3 of the reference below)
 - **pythagorean:** Use real life measuring.
 - **manhattan:** Use straight line movement only, making diagonal movement count as 2 squares.<br>(See image 2 of the reference below)
 
 ![Diagonal Movement Reference](https://i.imgur.com/tZyn79Z.png)
+
+### Feedback
+
+[Submit an issue report or feature request.](https://github.com/LaytonGB/PaladinAura/issues/new/choose)
