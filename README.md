@@ -21,7 +21,7 @@ Once there do the following:
 
 ## How to Use
 
-The API should be ready to go immediately. However, if you wish to customize the system, or even turn it off, you can do so from the in-game commands (see [Configuration](#Settings-/-Configuration) below).
+The API should be ready to go immediately. However, if you wish to customize the system, or even turn it off, you can do so from the in-game commands (see [Configuration](#Settings--Configuration) below).
 
 ### First time load
 
