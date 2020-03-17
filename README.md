@@ -37,7 +37,7 @@ These macros will be visible to all, but won't allow players to mess with anythi
 
 There are only two settings that can be configured (currently).
 
-1. **active:** This setting toggles the API on or off.<br>**NOTE:** If the API is turned off while characters are receiving a Paladin bonus, the bonus will not be removed when their token moves away from the bonus-giving Paladin.
+1. **active:** This setting toggles the API on or off.<br>**NOTE:** If the API is turned off while characters are receiving a Paladin bonus, the bonus will be immediately removed.
 
 2. **diagonal_calc_override:** This setting overrides the roll20 map settings for diagonal calculations. It has five acceptable values:
 
