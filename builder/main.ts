@@ -229,7 +229,7 @@ const PaladinAura = (function() {
    * range of them.
    */
   function paladinCheck() {
-    if (!getState('active')) return; // stops here if the API is inactive
+    if (getState('active') == 'false') return; // stops here if the API is inactive
     let page = getObj('page', Campaign().get('playerpageid')),
       pixelsPerSquare = page.get('snapping_increment') * 70,
       unitsPerSquare = page.get('scale_number'),
@@ -279,6 +279,10 @@ const PaladinAura = (function() {
         return token;
       }
 
+      /**
+       * Returns a PaladinObject.
+       * @param levelAttr The attribute of the character object that represents their paladin level.
+       */
       function setOutput(levelAttr: string): PaladinObject {
         let output = {
           token: token,
@@ -338,11 +342,16 @@ const PaladinAura = (function() {
         }
       });
       saveBonus = saveBonus ? saveBonus : 0;
-      setBuff(token, 'paladin_buff', saveBonus);
+      setBuff(token, saveBonus);
     });
   }
 
-  function setBuff(token: Graphic, attrName: string, value: string | number) {
+  /**
+   * Adjusts the Paladin bonus being given to the provided token.
+   * @param token The target token.
+   * @param value The new value to set the paladin bonus to.
+   */
+  function setBuff(token: Graphic, value: string | number) {
     let charID = token.get('represents'),
       char = getObj('character', charID);
     if (!char) {
@@ -355,17 +364,17 @@ const PaladinAura = (function() {
       let attr = findObjs({
         _type: 'attribute',
         _characterid: charID,
-        name: attrName
+        name: 'paladin_buff'
       })[0] as Attribute;
       if (!attr) {
         attr = createObj('attribute', {
           _characterid: charID,
-          name: attrName,
+          name: 'paladin_buff',
           current: '0'
         });
       }
       let attrValue = attr.get('current');
-      if (value != attrValue) {
+      if (+value != +attrValue) {
         let adjust = +value - +attrValue;
         attr.setWithWorker('current', value.toString());
         modAttr(token, 'globalsavemod', adjust);
@@ -374,11 +383,7 @@ const PaladinAura = (function() {
     return;
   }
 
-  function modAttr(
-    token: { get: (arg0: string) => any },
-    attrName: string,
-    value: string | number
-  ) {
+  function modAttr(token: Graphic, attrName: string, value: string | number) {
     let charID = token.get('represents'),
       attr = findObjs({
         _type: 'attribute',
@@ -401,14 +406,39 @@ const PaladinAura = (function() {
   }
 
   function toggleActive() {
-    state[stateName + 'active'] = !getState('active');
-    toChat(
-      `**Paladin Aura ${getState('active') ? 'Enabled' : 'Disabled'}.**`,
-      getState('active')
-    );
+    const stateInitial = getState('active');
+    state[stateName + 'active'] = stateInitial == 'true' ? 'false' : 'true';
+    let output = `**Paladin Aura ${
+      stateInitial == 'false' ? 'Enabled' : 'Disabled'
+    }.**`;
+    if (stateInitial == 'true') {
+      output += '** All aura bonuses set to 0.**';
+      // for each token on the player page
+      findObjs({
+        _type: 'graphic',
+        _pageid: Campaign().get('playerpageid')
+      })
+        // filter out any tokens that represent no sheet
+        .filter(t => {
+          const token = getObj('graphic', t.id);
+          const char = getObj('character', token.get('represents'));
+          if (char != undefined) {
+            return true;
+          }
+          return false;
+        })
+        // for each of the remaining tokens, set buff to zero
+        .forEach(t => {
+          const token = getObj('graphic', t.id);
+          setBuff(token, 0);
+        });
+    } else {
+      paladinCheck();
+    }
+    toChat(output, getState('active') == 'true');
   }
 
-  function getState(value: StateVar) {
+  function getState(value: StateVar): string {
     return state[stateName + value];
   }
 
@@ -453,14 +483,15 @@ const PaladinAura = (function() {
       const acceptables = s.acceptables ? s.acceptables : ['true', 'false'];
       const defaultVal = s.default ? s.default : 'true';
       if (
-        !state[stateName + s.name] ||
-        !acceptables.includes(state[stateName + s.name])
+        (state[stateName + s.name] == undefined ||
+          !acceptables.includes(state[stateName + s.name])) &&
+        s.ignore != 'true'
       ) {
         error(
           '"' +
-            s.name[0] +
+            s.name +
             '" value was "' +
-            state['stateName' + 's.name'] +
+            state[stateName + s.name] +
             '" but has now been set to its default value, "' +
             defaultVal +
             '".',
@@ -474,6 +505,7 @@ const PaladinAura = (function() {
   function registerEventHandlers() {
     on('chat:message', handleInput);
     on('change:graphic', paladinCheck);
+    on('change:campaign:playerpageid', paladinCheck);
   }
 
   return {

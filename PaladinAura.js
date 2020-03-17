@@ -172,7 +172,7 @@ var PaladinAura = (function () {
      * range of them.
      */
     function paladinCheck() {
-        if (!getState('active'))
+        if (getState('active') == 'false')
             return; // stops here if the API is inactive
         var page = getObj('page', Campaign().get('playerpageid')), pixelsPerSquare = page.get('snapping_increment') * 70, unitsPerSquare = page.get('scale_number'), allTokens = findObjs({
             _type: 'graphic',
@@ -216,6 +216,10 @@ var PaladinAura = (function () {
             else {
                 return token;
             }
+            /**
+             * Returns a PaladinObject.
+             * @param levelAttr The attribute of the character object that represents their paladin level.
+             */
             function setOutput(levelAttr) {
                 var output = {
                     token: token,
@@ -262,10 +266,15 @@ var PaladinAura = (function () {
                 }
             });
             saveBonus = saveBonus ? saveBonus : 0;
-            setBuff(token, 'paladin_buff', saveBonus);
+            setBuff(token, saveBonus);
         });
     }
-    function setBuff(token, attrName, value) {
+    /**
+     * Adjusts the Paladin bonus being given to the provided token.
+     * @param token The target token.
+     * @param value The new value to set the paladin bonus to.
+     */
+    function setBuff(token, value) {
         var charID = token.get('represents'), char = getObj('character', charID);
         if (!char) {
             error("Player Character '" + token.get('name') + "' had no character sheet.", 2);
@@ -275,17 +284,17 @@ var PaladinAura = (function () {
             var attr = findObjs({
                 _type: 'attribute',
                 _characterid: charID,
-                name: attrName
+                name: 'paladin_buff'
             })[0];
             if (!attr) {
                 attr = createObj('attribute', {
                     _characterid: charID,
-                    name: attrName,
+                    name: 'paladin_buff',
                     current: '0'
                 });
             }
             var attrValue = attr.get('current');
-            if (value != attrValue) {
+            if (+value != +attrValue) {
                 var adjust = +value - +attrValue;
                 attr.setWithWorker('current', value.toString());
                 modAttr(token, 'globalsavemod', adjust);
@@ -314,8 +323,35 @@ var PaladinAura = (function () {
         }
     }
     function toggleActive() {
-        state[stateName + 'active'] = !getState('active');
-        toChat("**Paladin Aura " + (getState('active') ? 'Enabled' : 'Disabled') + ".**", getState('active'));
+        var stateInitial = getState('active');
+        state[stateName + 'active'] = stateInitial == 'true' ? 'false' : 'true';
+        var output = "**Paladin Aura " + (stateInitial == 'false' ? 'Enabled' : 'Disabled') + ".**";
+        if (stateInitial == 'true') {
+            output += '** All aura bonuses set to 0.**';
+            // for each token on the player page
+            findObjs({
+                _type: 'graphic',
+                _pageid: Campaign().get('playerpageid')
+            })
+                // filter out any tokens that represent no sheet
+                .filter(function (t) {
+                var token = getObj('graphic', t.id);
+                var char = getObj('character', token.get('represents'));
+                if (char != undefined) {
+                    return true;
+                }
+                return false;
+            })
+                // for each of the remaining tokens, set buff to zero
+                .forEach(function (t) {
+                var token = getObj('graphic', t.id);
+                setBuff(token, 0);
+            });
+        }
+        else {
+            paladinCheck();
+        }
+        toChat(output, getState('active') == 'true');
     }
     function getState(value) {
         return state[stateName + value];
@@ -351,12 +387,13 @@ var PaladinAura = (function () {
         states.forEach(function (s) {
             var acceptables = s.acceptables ? s.acceptables : ['true', 'false'];
             var defaultVal = s["default"] ? s["default"] : 'true';
-            if (!state[stateName + s.name] ||
-                !acceptables.includes(state[stateName + s.name])) {
+            if ((state[stateName + s.name] == undefined ||
+                !acceptables.includes(state[stateName + s.name])) &&
+                s.ignore != 'true') {
                 error('"' +
-                    s.name[0] +
+                    s.name +
                     '" value was "' +
-                    state['stateName' + 's.name'] +
+                    state[stateName + s.name] +
                     '" but has now been set to its default value, "' +
                     defaultVal +
                     '".', -1);
@@ -367,6 +404,7 @@ var PaladinAura = (function () {
     function registerEventHandlers() {
         on('chat:message', handleInput);
         on('change:graphic', paladinCheck);
+        on('change:campaign:playerpageid', paladinCheck);
     }
     return {
         CheckMacros: checkMacros,
