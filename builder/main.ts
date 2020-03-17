@@ -1,40 +1,55 @@
 /* eslint-disable no-undef */
 
-interface StateForm {
-  name: StateVar;
-  acceptables?: string[];
-  default?: string;
-  ignore?: boolean;
-}
+const PaladinAura = (function() {
+  type StateVar = 'active' | 'diagonal_calc_override';
 
-interface MacroForm {
-  name: string;
-  action: string;
-  visibleto?: string;
-}
+  type StringBool = 'true' | 'false';
 
-interface HelpForm {
-  name: string;
-  desc: string[];
-  example?: string[];
-  link?: StateVar;
-}
+  /**
+   * @param name A name for this setting. Because this name is to be added to the
+   * states object, it is best to keep this name uniform.
+   * @param acceptables Optional. Acceptable values for this state.
+   * @param default Optional. The default value for this state.
+   * @param ignore Optional. If true, this state will not be reset to default
+   * regardless of if its current value is outside its acceptable values.
+   * @param hide Optional. If true, this state will not show in the config menu.
+   */
+  interface StateForm {
+    name: StateVar;
+    acceptables?: string[];
+    default?: string;
+    ignore?: StringBool;
+    hide?: StringBool;
+  }
 
-type StateVar = 'active' | 'diagonal_calc_override';
+  interface MacroForm {
+    name: string;
+    action: string;
+    visibleto?: string;
+  }
 
-interface PaladinObject {
-  token: Graphic;
-  level: number;
-  left: number;
-  top: number;
-  chaBonus: number;
-  radius: number;
-}
+  interface HelpForm {
+    name: string;
+    desc: string[];
+    example?: string[];
+    link?: StateVar;
+  }
 
-const PaladinAura = (() => {
+  interface PaladinObject {
+    token: Graphic;
+    level: number;
+    left: number;
+    top: number;
+    chaBonus: number;
+    radius: number;
+  }
+
   const stateName = 'PaladinAura_';
   const states: StateForm[] = [
-    { name: 'active' },
+    {
+      name: 'active',
+      hide: 'true'
+    },
     {
       name: 'diagonal_calc_override',
       acceptables: ['none', 'foure', 'threefive', 'pythagorean', 'manhattan'],
@@ -129,7 +144,7 @@ const PaladinAura = (() => {
         }
         output += command.desc[i] + '}}';
       }
-      if (command.link) {
+      if (command.link !== undefined) {
         output += '{{Current Setting=' + getState(command.link) + '}}';
       }
       toChat(output, undefined, playerName);
@@ -139,6 +154,7 @@ const PaladinAura = (() => {
   function showConfig() {
     let output = `&{template:default} {{name=${name} Config}}`;
     states.forEach(s => {
+      if (s.hide === 'true') return;
       const acceptableValues = s.acceptables
         ? s.acceptables
         : ['true', 'false'];
@@ -206,7 +222,14 @@ const PaladinAura = (() => {
     }
   }
 
+  /**
+   * If PaladinAura's "active" state is true,
+   * searches all tokens on the current page to find paladins and
+   * then applies a bonus onto those paladins and all within
+   * range of them.
+   */
   function paladinCheck() {
+    if (!getState('active')) return; // stops here if the API is inactive
     let page = getObj('page', Campaign().get('playerpageid')),
       pixelsPerSquare = page.get('snapping_increment') * 70,
       unitsPerSquare = page.get('scale_number'),
@@ -220,10 +243,10 @@ const PaladinAura = (() => {
         return !getObj('character', charID)
           ? false
           : +getAttrByName(charID, 'npc') == 1
-            ? false
-            : true;
+          ? false
+          : true;
       });
-    if (page.get('scale_units') != 'ft') return;
+    if (page.get('scale_units') != 'ft') return; // stops here if scale is not feet
     let auraTokens = playerTokens.map(token => {
       let charID = token.get('represents'),
         output: PaladinObject;
@@ -434,13 +457,13 @@ const PaladinAura = (() => {
         !acceptables.includes(state[stateName + s.name])
       ) {
         error(
-          '**"' +
+          '"' +
             s.name[0] +
             '" value was "' +
             state['stateName' + 's.name'] +
             '" but has now been set to its default value, "' +
             defaultVal +
-            '".**',
+            '".',
           -1
         );
         state[stateName + s.name] = defaultVal;

@@ -2,7 +2,10 @@
 var PaladinAura = (function () {
     var stateName = 'PaladinAura_';
     var states = [
-        { name: 'active' },
+        {
+            name: 'active',
+            hide: 'true'
+        },
         {
             name: 'diagonal_calc_override',
             acceptables: ['none', 'foure', 'threefive', 'pythagorean', 'manhattan'],
@@ -89,7 +92,7 @@ var PaladinAura = (function () {
                 }
                 output += command.desc[i] + '}}';
             }
-            if (command.link) {
+            if (command.link !== undefined) {
                 output += '{{Current Setting=' + getState(command.link) + '}}';
             }
             toChat(output, undefined, playerName);
@@ -98,6 +101,8 @@ var PaladinAura = (function () {
     function showConfig() {
         var output = "&{template:default} {{name=" + name + " Config}}";
         states.forEach(function (s) {
+            if (s.hide === 'true')
+                return;
             var acceptableValues = s.acceptables
                 ? s.acceptables
                 : ['true', 'false'];
@@ -160,7 +165,15 @@ var PaladinAura = (function () {
             }
         }
     }
+    /**
+     * If PaladinAura's "active" state is true,
+     * searches all tokens on the current page to find paladins and
+     * then applies a bonus onto those paladins and all within
+     * range of them.
+     */
     function paladinCheck() {
+        if (!getState('active'))
+            return; // stops here if the API is inactive
         var page = getObj('page', Campaign().get('playerpageid')), pixelsPerSquare = page.get('snapping_increment') * 70, unitsPerSquare = page.get('scale_number'), allTokens = findObjs({
             _type: 'graphic',
             _subtype: 'token',
@@ -174,7 +187,7 @@ var PaladinAura = (function () {
                     : true;
         });
         if (page.get('scale_units') != 'ft')
-            return;
+            return; // stops here if scale is not feet
         var auraTokens = playerTokens.map(function (token) {
             var charID = token.get('represents'), output;
             if (getAttrByName(charID, 'class')
@@ -340,13 +353,13 @@ var PaladinAura = (function () {
             var defaultVal = s["default"] ? s["default"] : 'true';
             if (!state[stateName + s.name] ||
                 !acceptables.includes(state[stateName + s.name])) {
-                error('**"' +
+                error('"' +
                     s.name[0] +
                     '" value was "' +
                     state['stateName' + 's.name'] +
                     '" but has now been set to its default value, "' +
                     defaultVal +
-                    '".**', -1);
+                    '".', -1);
                 state[stateName + s.name] = defaultVal;
             }
         });
