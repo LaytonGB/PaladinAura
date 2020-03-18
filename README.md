@@ -4,6 +4,8 @@ A roll20 API for 5E D&D that automatically adjusts the saving throw bonuses of P
 
 The API takes into account the paladin's level, and whether the bonus has already been applied. After rigorous testing there have been no accidental double-applies of bonuses.
 
+Note that the API only runs on the page that the Player Ribbon is set to.
+
 **WARNING:** This API only works with [Roll20's 5E OGL D&D Character Sheet](https://wiki.roll20.net/5th_Edition_OGL_by_Roll20) and, like all API, requires a Pro Subscription to use.
 
 ### [Problems and Feedback](#Feedback)
