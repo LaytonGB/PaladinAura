@@ -1,6 +1,8 @@
 /* eslint-disable no-undef */
 
 const PaladinAura = (function() {
+  const version = '1.0.1';
+
   type StateVar = 'active' | 'diagonal_calc_override';
 
   type StringBool = 'true' | 'false';
@@ -135,6 +137,15 @@ const PaladinAura = (function() {
         link: 'active'
       }
     ];
+    toChat(
+      '&{template:default} {{name=' +
+        'VERSION' +
+        '}} {{Current=' +
+        version +
+        '}}',
+      undefined,
+      playerName
+    );
     commandsArr.forEach(command => {
       let output =
         '&{template:default} {{name=' + code(command.name) + '}}{{Function=';

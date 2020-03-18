@@ -1,5 +1,6 @@
 /* eslint-disable no-undef */
 var PaladinAura = (function () {
+    var version = '1.0.1';
     var stateName = 'PaladinAura_';
     var states = [
         {
@@ -84,6 +85,11 @@ var PaladinAura = (function () {
                 link: 'active'
             }
         ];
+        toChat('&{template:default} {{name=' +
+            'VERSION' +
+            '}} {{Current=' +
+            version +
+            '}}', undefined, playerName);
         commandsArr.forEach(function (command) {
             var output = '&{template:default} {{name=' + code(command.name) + '}}{{Function=';
             for (var i = 0; i < command.desc.length; i++) {
