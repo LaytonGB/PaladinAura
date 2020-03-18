@@ -139,7 +139,7 @@ const PaladinAura = (function() {
     ];
     toChat(
       '&{template:default} {{name=' +
-        'VERSION' +
+        '**VERSION**' +
         '}} {{Current=' +
         version +
         '}}',

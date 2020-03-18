@@ -86,9 +86,11 @@ var PaladinAura = (function () {
             }
         ];
         toChat('&{template:default} {{name=' +
-            'VERSION' +
+            '**VERSION**' +
             '}} {{Current=' +
             version +
+            '}} {{Newest=' +
+            getVersion() +
             '}}', undefined, playerName);
         commandsArr.forEach(function (command) {
             var output = '&{template:default} {{name=' + code(command.name) + '}}{{Function=';
@@ -103,6 +105,16 @@ var PaladinAura = (function () {
             }
             toChat(output, undefined, playerName);
         });
+    }
+    /**
+     * Returns a string from the GitHub that gives the newest version of this API.
+     * Used only by the help interface.
+     */
+    function getVersion() {
+        var xmlHttp = new XMLHttpRequest();
+        xmlHttp.open('GET', 'https://raw.githubusercontent.com/LaytonGB/PaladinAura/master/.version', true);
+        xmlHttp.send(null);
+        return xmlHttp.responseText;
     }
     function showConfig() {
         var output = "&{template:default} {{name=" + name + " Config}}";
