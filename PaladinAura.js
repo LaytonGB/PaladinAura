@@ -89,8 +89,6 @@ var PaladinAura = (function () {
             '**VERSION**' +
             '}} {{Current=' +
             version +
-            '}} {{Newest=' +
-            getVersion() +
             '}}', undefined, playerName);
         commandsArr.forEach(function (command) {
             var output = '&{template:default} {{name=' + code(command.name) + '}}{{Function=';
@@ -105,16 +103,6 @@ var PaladinAura = (function () {
             }
             toChat(output, undefined, playerName);
         });
-    }
-    /**
-     * Returns a string from the GitHub that gives the newest version of this API.
-     * Used only by the help interface.
-     */
-    function getVersion() {
-        var xmlHttp = new XMLHttpRequest();
-        xmlHttp.open('GET', 'https://raw.githubusercontent.com/LaytonGB/PaladinAura/master/.version', true);
-        xmlHttp.send(null);
-        return xmlHttp.responseText;
     }
     function showConfig() {
         var output = "&{template:default} {{name=" + name + " Config}}";
@@ -293,6 +281,7 @@ var PaladinAura = (function () {
      * @param value The new value to set the paladin bonus to.
      */
     function setBuff(token, value) {
+        setMarker(token, value);
         var charID = token.get('represents'), char = getObj('character', charID);
         if (!char) {
             error("Player Character '" + token.get('name') + "' had no character sheet.", 2);
@@ -338,6 +327,20 @@ var PaladinAura = (function () {
             var attrValue = attr.get('current'), adjust = +attrValue + +value;
             attr.setWithWorker('current', adjust.toString());
             return;
+        }
+    }
+    /**
+     * Sets or removes a marker on a token based on the bonus it has started
+     * or stopped recieving respectively.
+     * @param token A token object.
+     * @param value A number.
+     */
+    function setMarker(token, value) {
+        if (value > 0) {
+            token.set('status_bolt-shield', value);
+        }
+        else {
+            token.set('status_bolt-shield', false);
         }
     }
     function toggleActive() {

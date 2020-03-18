@@ -362,7 +362,8 @@ const PaladinAura = (function() {
    * @param token The target token.
    * @param value The new value to set the paladin bonus to.
    */
-  function setBuff(token: Graphic, value: string | number) {
+  function setBuff(token: Graphic, value: number) {
+    setMarker(token, value);
     let charID = token.get('represents'),
       char = getObj('character', charID);
     if (!char) {
@@ -394,7 +395,7 @@ const PaladinAura = (function() {
     return;
   }
 
-  function modAttr(token: Graphic, attrName: string, value: string | number) {
+  function modAttr(token: Graphic, attrName: string, value: number) {
     let charID = token.get('represents'),
       attr = findObjs({
         _type: 'attribute',
@@ -413,6 +414,20 @@ const PaladinAura = (function() {
         adjust = +attrValue + +value;
       attr.setWithWorker('current', adjust.toString());
       return;
+    }
+  }
+
+  /**
+   * Sets or removes a marker on a token based on the bonus it has started
+   * or stopped recieving respectively.
+   * @param token A token object.
+   * @param value A number.
+   */
+  function setMarker(token: Graphic, value: number): void {
+    if (value > 0) {
+      token.set('status_bolt-shield', value);
+    } else {
+      token.set('status_bolt-shield', false);
     }
   }
 
