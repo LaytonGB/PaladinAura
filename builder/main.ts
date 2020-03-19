@@ -469,6 +469,13 @@ const PaladinAura = (function() {
     toChat(output, getState('active') == 'true');
   }
 
+  /**
+   * Returns the sheet type currently in use.
+   */
+  function getSheetType(): '5E Roll20' | '5E Shaped' {
+    return getState('sheet_type') as '5E Roll20' | '5E Shaped';
+  }
+
   function getState(value: StateVar): string {
     return state[stateName + value];
   }
