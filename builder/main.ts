@@ -3,7 +3,7 @@
 const PaladinAura = (function() {
   const version = '1.0.1';
 
-  type StateVar = 'active' | 'diagonal_calc_override';
+  type StateVar = 'active' | 'diagonal_calc_override' | 'status_marker';
 
   type StringBool = 'true' | 'false';
 
@@ -56,6 +56,11 @@ const PaladinAura = (function() {
       name: 'diagonal_calc_override',
       acceptables: ['none', 'foure', 'threefive', 'pythagorean', 'manhattan'],
       default: 'none'
+    },
+    {
+      name: 'status_marker',
+      default: 'status_bolt-shield',
+      ignore: 'true'
     }
   ];
   const name = 'Paladin Aura';
