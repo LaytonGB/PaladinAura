@@ -3,7 +3,7 @@
 const PaladinAura = (function() {
   const version = '1.0.1';
 
-  type StateVar = 'active' | 'diagonal_calc_override';
+  type StateVar = 'active' | 'diagonal_calc_override' | 'sheet_type';
 
   type StringBool = 'true' | 'false';
 
@@ -55,6 +55,11 @@ const PaladinAura = (function() {
     {
       name: 'diagonal_calc_override',
       acceptables: ['none', 'foure', 'threefive', 'pythagorean', 'manhattan'],
+      default: 'none'
+    },
+    {
+      name: 'sheet_type',
+      acceptables: ['5E Roll20', '5E Shaped'],
       default: 'none'
     }
   ];
