@@ -59,6 +59,7 @@ const PaladinAura = (function() {
     },
     {
       name: 'status_marker',
+      acceptables: ['status_bolt-shield', 'none', 'your_custom_marker_name'],
       default: 'status_bolt-shield',
       ignore: 'true'
     }
@@ -514,9 +515,9 @@ const PaladinAura = (function() {
       const acceptables = s.acceptables ? s.acceptables : ['true', 'false'];
       const defaultVal = s.default ? s.default : 'true';
       if (
-        (state[stateName + s.name] == undefined ||
-          !acceptables.includes(state[stateName + s.name])) &&
-        s.ignore != 'true'
+        state[stateName + s.name] == undefined ||
+          (!acceptables.includes(state[stateName + s.name]) &&
+        s.ignore != 'true')
       ) {
         error(
           '"' +
