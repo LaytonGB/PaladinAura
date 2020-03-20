@@ -1,5 +1,7 @@
 # PaladinAura
 
+**VERSION:** 1.0.3
+
 A roll20 API for 5E D&D that automatically adjusts the saving throw bonuses of Paladins and those close to them.
 
 The API takes into account the paladin's level, and whether the bonus has already been applied. After rigorous testing there have been no accidental double-applies of bonuses.
@@ -42,9 +44,7 @@ These macros will be visible to all, but won't allow players to mess with anythi
 
 There are only two settings that can be configured (currently).
 
-1. **active:** This setting toggles the API on or off.<br>**NOTE:** If the API is turned off while characters are receiving a Paladin bonus, the bonus will be immediately removed.
-
-2. **diagonal_calc_override:** This setting overrides the roll20 map settings for diagonal calculations. It has five acceptable values:
+1. **diagonal_calc_override:** This setting overrides the roll20 map settings for diagonal calculations. It has five acceptable values:
 
 - **none:** Do not override any settings / use the page's configuration. (**Default and Recommended**)
 - **foure:** Use 4E / 5E D&D measuring.<br>(See image 1 of the reference below)
@@ -54,6 +54,19 @@ There are only two settings that can be configured (currently).
 
 ![Diagonal Movement Reference](https://i.imgur.com/tZyn79Z.png)
 
+2. **status_marker:** This setting changes what status marker will be applied to tokens when they are under the effect of a paladin's aura.<br>**Custom status markers will show in the config menu list.**
+
 ### Feedback
 
 [Submit an issue report or feature request.](https://github.com/LaytonGB/PaladinAura/issues/new/choose)
+
+## Changelog
+
+1.0.3
+- Added custom token-status marker integration (use `!pa config` in Roll20 to change settings)
+
+1.0.2
+- Added a bottom limit to the Aura's bonus (+1)
+
+1.0.1
+- Added token-status marker integration. When the PaladinAura affects a token that token now recieves a marker with a number to represent the bonus.
