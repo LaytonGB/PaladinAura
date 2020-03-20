@@ -1,6 +1,6 @@
 /* eslint-disable no-undef */
 var PaladinAura = (function () {
-    var version = '1.0.3';
+    var version = '1.0.4';
     var stateName = 'PaladinAura_';
     var states = [
         {

@@ -62,6 +62,9 @@ There are only two settings that can be configured (currently).
 
 ## Changelog
 
+1.0.4
+- Cleaned up API Output Console feed
+
 1.0.3
 - Added custom token-status marker integration (use `!pa config` in Roll20 to change settings)
 
