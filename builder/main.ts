@@ -300,7 +300,7 @@ const PaladinAura = (function() {
           level: +getAttrByName(charID, levelAttr),
           left: +token.get('left'),
           top: +token.get('top'),
-          chaBonus: +getAttrByName(charID, 'charisma_mod'),
+          chaBonus: Math.max(+getAttrByName(charID, 'charisma_mod'), 1),
           radius: +getAttrByName(charID, levelAttr) >= 18 ? 30 : 10
         };
         return output;
