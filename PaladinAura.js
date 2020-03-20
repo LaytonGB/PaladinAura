@@ -157,7 +157,7 @@ var PaladinAura = (function () {
             state[stateName + parts[2]] +
             ' to ' +
             parts[3] +
-            '**.', true, playerName);
+            '**.', true, 'gm');
         if (parts[2] == 'status_marker')
             cleanMarkers(state[stateName + parts[2]], parts[3]);
         state[stateName + parts[2]] = parts[3];

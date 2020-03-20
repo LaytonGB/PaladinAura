@@ -222,7 +222,7 @@ const PaladinAura = (function() {
         parts[3] +
         '**.',
       true,
-      playerName
+      'gm'
     );
     if (parts[2] == 'status_marker')
       cleanMarkers(state[stateName + parts[2]], parts[3]);
