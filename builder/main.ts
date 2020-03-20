@@ -290,31 +290,31 @@ const PaladinAura = (function() {
         let charID = token.get('represents');
         return !getObj('character', charID)
           ? false
-          : +getAttrByName(charID, 'npc') == 1
-            ? false
-            : true;
+          : +getAttr(charID, 'npc') == 1
+          ? false
+          : true;
       });
     if (page.get('scale_units') != 'ft') return; // stops here if scale is not feet
     let auraTokens = playerTokens.map(token => {
       let charID = token.get('represents'),
         output: PaladinObject;
       if (
-        getAttrByName(charID, 'class')
+        getAttr(charID, 'class')
           .toLowerCase()
           .includes('paladin') &&
-        +getAttrByName(charID, 'base_level') >= 6 &&
-        +getAttrByName(charID, 'hp') > 0
+        +getAttr(charID, 'base_level') >= 6 &&
+        +getAttr(charID, 'hp') > 0
       ) {
         output = setOutput('base_level');
       } else {
         ['multiclass1', 'multiclass2', 'multiclass3'].forEach(className => {
-          if (+getAttrByName(charID, className + '_flag') == 1) {
+          if (+getAttr(charID, className + '_flag') == 1) {
             if (
-              getAttrByName(charID, className)
+              getAttr(charID, className)
                 .toLowerCase()
                 .includes('paladin') &&
-              +getAttrByName(charID, className + '_lvl') >= 6 &&
-              +getAttrByName(charID, 'hp') > 0
+              +getAttr(charID, className + '_lvl') >= 6 &&
+              +getAttr(charID, 'hp') > 0
             ) {
               output = setOutput(className + '_lvl');
             }
@@ -334,11 +334,11 @@ const PaladinAura = (function() {
       function setOutput(levelAttr: string): PaladinObject {
         let output = {
           token: token,
-          level: +getAttrByName(charID, levelAttr),
+          level: +getAttr(charID, levelAttr),
           left: +token.get('left'),
           top: +token.get('top'),
-          chaBonus: Math.max(+getAttrByName(charID, 'charisma_mod'), 1),
-          radius: +getAttrByName(charID, levelAttr) >= 18 ? 30 : 10
+          chaBonus: Math.max(+getAttr(charID, 'charisma_mod'), 1),
+          radius: +getAttr(charID, levelAttr) >= 18 ? 30 : 10
         };
         return output;
       }
@@ -392,6 +392,16 @@ const PaladinAura = (function() {
       saveBonus = saveBonus ? saveBonus : 0;
       setBuff(token, saveBonus);
     });
+  }
+
+  function getAttr(id: string, name: string): string {
+    let attr = findObjs({
+      _type: 'attribute',
+      _characterid: id,
+      name: name
+    }) as Attribute[];
+    if (attr.length > 0) return attr[0].get('current');
+    return 'undefined';
   }
 
   /**
