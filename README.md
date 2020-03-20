@@ -1,6 +1,6 @@
 # PaladinAura
 
-**VERSION:** 1.0.3
+**VERSION:** 1.0.4
 
 A roll20 API for 5E D&D that automatically adjusts the saving throw bonuses of Paladins and those close to them.
 
