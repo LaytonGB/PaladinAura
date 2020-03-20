@@ -1,7 +1,7 @@
 /* eslint-disable no-undef */
 
 const PaladinAura = (function() {
-  const version = '1.0.1';
+  const version = '1.0.2';
 
   type StateVar = 'active' | 'diagonal_calc_override';
 
