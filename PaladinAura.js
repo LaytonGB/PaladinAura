@@ -11,6 +11,12 @@ var PaladinAura = (function () {
             name: 'diagonal_calc_override',
             acceptables: ['none', 'foure', 'threefive', 'pythagorean', 'manhattan'],
             "default": 'none'
+        },
+        {
+            name: 'status_marker',
+            "default": 'status_bolt-shield',
+            ignore: 'true',
+            customConfig: ''
         }
     ];
     var name = 'Paladin Aura';
@@ -105,6 +111,7 @@ var PaladinAura = (function () {
         });
     }
     function showConfig() {
+        updateCustomConfigs();
         var output = "&{template:default} {{name=" + name + " Config}}";
         states.forEach(function (s) {
             if (s.hide === 'true')
@@ -114,10 +121,18 @@ var PaladinAura = (function () {
                 : ['true', 'false'];
             var defaultValue = s["default"] ? s["default"] : 'true';
             var currentValue = getState(s.name);
-            var stringVals = valuesToString(acceptableValues, defaultValue);
+            var stringVals = s.customConfig == undefined
+                ? valuesToString(acceptableValues, defaultValue)
+                : s.customConfig;
             output += "{{" + s.name + "=[" + currentValue + "](" + apiCall + " config " + s.name + " ?{New " + s.name + " value" + stringVals + "})}}";
         });
         toChat(output, undefined, playerName);
+        /**
+         * Moves the default value to the start of the array and presents
+         * all acceptable values in a drop-down menu format.
+         * @param values Acceptable values array.
+         * @param defaultValue The state's default value.
+         */
         function valuesToString(values, defaultValue) {
             var output = '';
             var index = values.indexOf(defaultValue);
@@ -136,9 +151,29 @@ var PaladinAura = (function () {
      * @param parts An Array of strings, each part is a section of the incoming message.
      */
     function setConfig(parts) {
-        toChat("**" + parts[2] + "** has been changed **from " + state[stateName + "_" + parts[2]] + " to " + parts[3] + "**.", true, playerName);
-        state[stateName + "_" + parts[2]] = parts[3];
+        toChat('**' +
+            parts[2] +
+            '** has been changed **from ' +
+            state[stateName + parts[2]] +
+            ' to ' +
+            parts[3] +
+            '**.', true, playerName);
+        if (parts[2] == 'status_marker')
+            cleanMarkers(state[stateName + parts[2]], parts[3]);
+        state[stateName + parts[2]] = parts[3];
         showConfig();
+        paladinCheck();
+    }
+    function cleanMarkers(oldMarker, newMarker) {
+        findObjs({
+            _type: 'graphic'
+        })
+            .filter(function (g) {
+            return g.get(oldMarker) != 'false';
+        })
+            .forEach(function (g) {
+            g.set(oldMarker, 'false');
+        });
     }
     function handleInput(msg) {
         parts = msg.content.split(' ');
@@ -337,11 +372,38 @@ var PaladinAura = (function () {
      */
     function setMarker(token, value) {
         if (value > 0) {
-            token.set('status_bolt-shield', value);
+            token.set(getState('status_marker'), value);
         }
         else {
-            token.set('status_bolt-shield', false);
+            token.set(getState('status_marker'), false);
         }
+    }
+    function updateCustomConfigs() {
+        if (Campaign() != undefined) {
+            updateTokenMarkers();
+        }
+        function updateTokenMarkers() {
+            var output = '|bolt-shield,status_bolt-shield';
+            var markerObjs = JSON.parse(Campaign().get('_token_markers') || '[]');
+            tokenMarkerSort(markerObjs, 'name').forEach(function (m) {
+                if (m.name != 'bolt-shield')
+                    output += '|' + m.name + ',status_' + m.tag;
+            });
+            states.find(function (s) {
+                return s.name == 'status_marker';
+            }).customConfig = output;
+        }
+    }
+    /**
+     * Returns the array after it has been sorted alphabetically, keeping
+     * capitalised items at the front of the array.
+     * @param arr An array of objects or strings.
+     * @param prop Optional. The property to sort by (for objects).
+     */
+    function tokenMarkerSort(arr, prop) {
+        return arr.sort(function (a, b) {
+            return a[prop] < b[prop] ? -1 : a[prop] > b[prop] ? 1 : 0;
+        });
     }
     function toggleActive() {
         var stateInitial = getState('active');
@@ -408,9 +470,8 @@ var PaladinAura = (function () {
         states.forEach(function (s) {
             var acceptables = s.acceptables ? s.acceptables : ['true', 'false'];
             var defaultVal = s["default"] ? s["default"] : 'true';
-            if ((state[stateName + s.name] == undefined ||
-                !acceptables.includes(state[stateName + s.name])) &&
-                s.ignore != 'true') {
+            if (state[stateName + s.name] == undefined ||
+                (!acceptables.includes(state[stateName + s.name]) && s.ignore != 'true')) {
                 error('"' +
                     s.name +
                     '" value was "' +

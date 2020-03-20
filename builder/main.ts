@@ -3,7 +3,7 @@
 const PaladinAura = (function() {
   const version = '1.0.2';
 
-  type StateVar = 'active' | 'diagonal_calc_override';
+  type StateVar = 'active' | 'diagonal_calc_override' | 'status_marker';
 
   type StringBool = 'true' | 'false';
 
@@ -15,6 +15,7 @@ const PaladinAura = (function() {
    * @param ignore Optional. If true, this state will not be reset to default
    * regardless of if its current value is outside its acceptable values.
    * @param hide Optional. If true, this state will not show in the config menu.
+   * @param customConfig Optional. Sets a custom dropdown menu for the config button.
    */
   interface StateForm {
     name: StateVar;
@@ -22,6 +23,7 @@ const PaladinAura = (function() {
     default?: string;
     ignore?: StringBool;
     hide?: StringBool;
+    customConfig?: string;
   }
 
   interface MacroForm {
@@ -47,7 +49,7 @@ const PaladinAura = (function() {
   }
 
   const stateName = 'PaladinAura_';
-  const states: StateForm[] = [
+  let states: StateForm[] = [
     {
       name: 'active',
       hide: 'true'
@@ -56,6 +58,12 @@ const PaladinAura = (function() {
       name: 'diagonal_calc_override',
       acceptables: ['none', 'foure', 'threefive', 'pythagorean', 'manhattan'],
       default: 'none'
+    },
+    {
+      name: 'status_marker',
+      default: 'status_bolt-shield',
+      ignore: 'true',
+      customConfig: ''
     }
   ];
   const name = 'Paladin Aura';
@@ -163,6 +171,7 @@ const PaladinAura = (function() {
   }
 
   function showConfig() {
+    updateCustomConfigs();
     let output = `&{template:default} {{name=${name} Config}}`;
     states.forEach(s => {
       if (s.hide === 'true') return;
@@ -171,11 +180,20 @@ const PaladinAura = (function() {
         : ['true', 'false'];
       const defaultValue = s.default ? s.default : 'true';
       const currentValue = getState(s.name);
-      const stringVals = valuesToString(acceptableValues, defaultValue);
+      const stringVals =
+        s.customConfig == undefined
+          ? valuesToString(acceptableValues, defaultValue)
+          : s.customConfig;
       output += `{{${s.name}=[${currentValue}](${apiCall} config ${s.name} ?{New ${s.name} value${stringVals}})}}`;
     });
     toChat(output, undefined, playerName);
 
+    /**
+     * Moves the default value to the start of the array and presents
+     * all acceptable values in a drop-down menu format.
+     * @param values Acceptable values array.
+     * @param defaultValue The state's default value.
+     */
     function valuesToString(values: string[], defaultValue: string) {
       let output = '';
       const index = values.indexOf(defaultValue);
@@ -196,14 +214,33 @@ const PaladinAura = (function() {
    */
   function setConfig(parts: string[]): void {
     toChat(
-      `**${parts[2]}** has been changed **from ${
-        state[`${stateName}_${parts[2]}`]
-      } to ${parts[3]}**.`,
+      '**' +
+        parts[2] +
+        '** has been changed **from ' +
+        state[stateName + parts[2]] +
+        ' to ' +
+        parts[3] +
+        '**.',
       true,
       playerName
     );
-    state[`${stateName}_${parts[2]}`] = parts[3];
+    if (parts[2] == 'status_marker')
+      cleanMarkers(state[stateName + parts[2]], parts[3]);
+    state[stateName + parts[2]] = parts[3];
     showConfig();
+    paladinCheck();
+  }
+
+  function cleanMarkers(oldMarker: string, newMarker: string): void {
+    findObjs({
+      _type: 'graphic'
+    })
+      .filter((g: Graphic) => {
+        return g.get(oldMarker as any) != 'false';
+      })
+      .forEach((g: Graphic) => {
+        g.set(oldMarker as any, 'false');
+      });
   }
 
   function handleInput(msg: ChatEventData) {
@@ -254,8 +291,8 @@ const PaladinAura = (function() {
         return !getObj('character', charID)
           ? false
           : +getAttrByName(charID, 'npc') == 1
-          ? false
-          : true;
+            ? false
+            : true;
       });
     if (page.get('scale_units') != 'ft') return; // stops here if scale is not feet
     let auraTokens = playerTokens.map(token => {
@@ -425,10 +462,45 @@ const PaladinAura = (function() {
    */
   function setMarker(token: Graphic, value: number): void {
     if (value > 0) {
-      token.set('status_bolt-shield', value);
+      token.set(getState('status_marker') as any, value);
     } else {
-      token.set('status_bolt-shield', false);
+      token.set(getState('status_marker') as any, false);
     }
+  }
+
+  function updateCustomConfigs(): void {
+    if (Campaign() != undefined) {
+      updateTokenMarkers();
+    }
+
+    function updateTokenMarkers() {
+      let output = '|bolt-shield,status_bolt-shield';
+      const markerObjs = JSON.parse(
+        Campaign().get('_token_markers') || '[]'
+      ) as TokenMarkerObject[];
+      tokenMarkerSort(markerObjs, 'name').forEach(m => {
+        if (m.name != 'bolt-shield')
+          output += '|' + m.name + ',status_' + m.tag;
+      });
+      states.find(s => {
+        return s.name == 'status_marker';
+      }).customConfig = output;
+    }
+  }
+
+  /**
+   * Returns the array after it has been sorted alphabetically, keeping
+   * capitalised items at the front of the array.
+   * @param arr An array of objects or strings.
+   * @param prop Optional. The property to sort by (for objects).
+   */
+  function tokenMarkerSort(
+    arr: TokenMarkerObject[],
+    prop?: string
+  ): TokenMarkerObject[] {
+    return arr.sort((a, b) => {
+      return a[prop] < b[prop] ? -1 : a[prop] > b[prop] ? 1 : 0;
+    });
   }
 
   function toggleActive() {
@@ -509,9 +581,8 @@ const PaladinAura = (function() {
       const acceptables = s.acceptables ? s.acceptables : ['true', 'false'];
       const defaultVal = s.default ? s.default : 'true';
       if (
-        (state[stateName + s.name] == undefined ||
-          !acceptables.includes(state[stateName + s.name])) &&
-        s.ignore != 'true'
+        state[stateName + s.name] == undefined ||
+        (!acceptables.includes(state[stateName + s.name]) && s.ignore != 'true')
       ) {
         error(
           '"' +
