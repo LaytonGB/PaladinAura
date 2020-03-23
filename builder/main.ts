@@ -78,7 +78,7 @@ const PaladinAura = (function() {
    */
   function checkMacros() {
     const playerList = findObjs({ _type: 'player', _online: true });
-    const gm = playerList.find(player => {
+    const gm = playerList.find((player) => {
       return playerIsGM(player.id) === true;
     }) as Player;
     const macroArr: MacroForm[] = [
@@ -95,7 +95,7 @@ const PaladinAura = (function() {
         action: `${apiCall} config`
       }
     ];
-    macroArr.forEach(macro => {
+    macroArr.forEach((macro) => {
       const macroObj = findObjs({
         _type: 'macro',
         name: macro.name
@@ -154,7 +154,7 @@ const PaladinAura = (function() {
       undefined,
       playerName
     );
-    commandsArr.forEach(command => {
+    commandsArr.forEach((command) => {
       let output =
         '&{template:default} {{name=' + code(command.name) + '}}{{Function=';
       for (let i = 0; i < command.desc.length; i++) {
@@ -173,8 +173,8 @@ const PaladinAura = (function() {
   function showConfig() {
     updateCustomConfigs();
     let output = `&{template:default} {{name=${name} Config}}`;
-    states.forEach(s => {
-      if (s.hide === 'true') return;
+    states.forEach((s) => {
+      if (s.hide === 'true') {return;}
       const acceptableValues = s.acceptables
         ? s.acceptables
         : ['true', 'false'];
@@ -201,7 +201,7 @@ const PaladinAura = (function() {
         values.splice(index, 1);
         values.unshift(defaultValue);
       }
-      values.forEach(v => {
+      values.forEach((v) => {
         output += '|' + v;
       });
       return output;
@@ -224,14 +224,13 @@ const PaladinAura = (function() {
       true,
       'gm'
     );
-    if (parts[2] == 'status_marker')
-      cleanMarkers(state[stateName + parts[2]], parts[3]);
+    if (parts[2] == 'status_marker') {cleanMarkers(state[stateName + parts[2]]);}
     state[stateName + parts[2]] = parts[3];
     showConfig();
     paladinCheck();
   }
 
-  function cleanMarkers(oldMarker: string, newMarker: string): void {
+  function cleanMarkers(oldMarker: string): void {
     findObjs({
       _type: 'graphic'
     })
@@ -277,7 +276,7 @@ const PaladinAura = (function() {
    * range of them.
    */
   function paladinCheck() {
-    if (getState('active') == 'false') return; // stops here if the API is inactive
+    if (getState('active') == 'false') {return;} // stops here if the API is inactive
     let page = getObj('page', Campaign().get('playerpageid')),
       pixelsPerSquare = page.get('snapping_increment') * 70,
       unitsPerSquare = page.get('scale_number'),
@@ -286,16 +285,16 @@ const PaladinAura = (function() {
         _subtype: 'token',
         _pageid: Campaign().get('playerpageid')
       }) as Graphic[],
-      playerTokens = allTokens.filter(token => {
+      playerTokens = allTokens.filter((token) => {
         let charID = token.get('represents');
         return !getObj('character', charID)
           ? false
           : +getAttr(charID, 'npc') == 1
-          ? false
-          : true;
+            ? false
+            : true;
       });
-    if (page.get('scale_units') != 'ft') return; // stops here if scale is not feet
-    let auraTokens = playerTokens.map(token => {
+    if (page.get('scale_units') != 'ft') {return;} // stops here if scale is not feet
+    let auraTokens = playerTokens.map((token) => {
       let charID = token.get('represents'),
         output: PaladinObject;
       if (
@@ -307,7 +306,7 @@ const PaladinAura = (function() {
       ) {
         output = setOutput('base_level');
       } else {
-        ['multiclass1', 'multiclass2', 'multiclass3'].forEach(className => {
+        ['multiclass1', 'multiclass2', 'multiclass3'].forEach((className) => {
           if (+getAttr(charID, className + '_flag') == 1) {
             if (
               getAttr(charID, className)
@@ -346,9 +345,9 @@ const PaladinAura = (function() {
     let paladinTokens = auraTokens.filter((obj: any) => {
       return obj.token !== undefined;
     }) as PaladinObject[];
-    playerTokens.forEach(token => {
+    playerTokens.forEach((token) => {
       let saveBonus: number;
-      paladinTokens.forEach(paladin => {
+      paladinTokens.forEach((paladin) => {
         let distLimit = (paladin.radius / unitsPerSquare) * pixelsPerSquare,
           xDist = Math.abs(token.get('left') - paladin.left),
           yDist = Math.abs(token.get('top') - paladin.top),
@@ -400,7 +399,7 @@ const PaladinAura = (function() {
       _characterid: id,
       name: name
     }) as Attribute[];
-    if (attr.length > 0) return attr[0].get('current');
+    if (attr.length > 0) {return attr[0].get('current');}
     return 'undefined';
   }
 
@@ -488,11 +487,10 @@ const PaladinAura = (function() {
       const markerObjs = JSON.parse(
         Campaign().get('_token_markers') || '[]'
       ) as TokenMarkerObject[];
-      tokenMarkerSort(markerObjs, 'name').forEach(m => {
-        if (m.name != 'bolt-shield')
-          output += '|' + m.name + ',status_' + m.tag;
+      tokenMarkerSort(markerObjs, 'name').forEach((m) => {
+        if (m.name != 'bolt-shield') {output += '|' + m.name + ',status_' + m.tag;}
       });
-      states.find(s => {
+      states.find((s) => {
         return s.name == 'status_marker';
       }).customConfig = output;
     }
@@ -527,7 +525,7 @@ const PaladinAura = (function() {
         _pageid: Campaign().get('playerpageid')
       })
         // filter out any tokens that represent no sheet
-        .filter(t => {
+        .filter((t) => {
           const token = getObj('graphic', t.id);
           const char = getObj('character', token.get('represents'));
           if (char != undefined) {
@@ -536,7 +534,7 @@ const PaladinAura = (function() {
           return false;
         })
         // for each of the remaining tokens, set buff to zero
-        .forEach(t => {
+        .forEach((t) => {
           const token = getObj('graphic', t.id);
           setBuff(token, 0);
         });
@@ -587,7 +585,7 @@ const PaladinAura = (function() {
   }
 
   function startupChecks() {
-    states.forEach(s => {
+    states.forEach((s) => {
       const acceptables = s.acceptables ? s.acceptables : ['true', 'false'];
       const defaultVal = s.default ? s.default : 'true';
       if (

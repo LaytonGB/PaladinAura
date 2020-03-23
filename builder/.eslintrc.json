@@ -3,21 +3,29 @@
     "browser": true,
     "es6": true
   },
-  "extends": "prettier",
+  "extends": [
+    "eslint:recommended",
+    "plugin:@typescript-eslint/eslint-recommended"
+  ],
   "globals": {
     "Atomics": "readonly",
     "SharedArrayBuffer": "readonly"
   },
   "parser": "@typescript-eslint/parser",
+  "plugins": ["@typescript-eslint"],
   "parserOptions": {
     "ecmaVersion": 2015,
     "sourceType": "module"
   },
-  "plugins": ["@typescript-eslint"],
   "rules": {
     "indent": ["error", 2],
     "linebreak-style": ["error", "windows"],
     "quotes": ["error", "single", "avoid-escape"],
-    "semi": ["error", "always"]
+    "semi": ["error", "always"],
+    "brace-style": ["error", "1tbs", { "allowSingleLine": true }],
+    "curly": ["error", "all"],
+    "arrow-parens": ["error", "always"],
+    "no-unused-vars": ["warn"],
+    "no-empty": ["warn"]
   }
 }
