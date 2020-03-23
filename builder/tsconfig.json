@@ -1,9 +1,15 @@
 {
   "compilerOptions": {
-      "types" : [
-        "node",
-        "roll20",
-        "cheerio"
-      ]
-  }
+    "types" : [
+      "node",
+      "roll20",
+      "cheerio"
+    ],
+    "module": "amd",
+    "outFile": "../PaladinAura.js",
+    "target": "ES6"
+  },
+  "files": [
+    "main.ts"
+  ]
 }

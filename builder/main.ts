@@ -73,6 +73,19 @@ const PaladinAura = (function() {
 
   let playerName: string, playerID: string, parts: string[];
 
+  const getActivePages = () => [
+    ...new Set([
+      Campaign().get('playerpageid'),
+      ...Object.values(Campaign().get('playerspecificpages')),
+      ...(findObjs({
+        type: 'player',
+        online: true
+      }) as Player[])
+        .filter((p) => playerIsGM(p.id))
+        .map((p) => p.get('_lastpage'))
+    ])
+  ];
+
   /**
    * Checks each macro from the macroArr array to ensure their functions are up to date.
    */
@@ -174,7 +187,9 @@ const PaladinAura = (function() {
     updateCustomConfigs();
     let output = `&{template:default} {{name=${name} Config}}`;
     states.forEach((s) => {
-      if (s.hide === 'true') {return;}
+      if (s.hide == 'true') {
+        return;
+      }
       const acceptableValues = s.acceptables
         ? s.acceptables
         : ['true', 'false'];
@@ -224,7 +239,9 @@ const PaladinAura = (function() {
       true,
       'gm'
     );
-    if (parts[2] == 'status_marker') {cleanMarkers(state[stateName + parts[2]]);}
+    if (parts[2] == 'status_marker') {
+      cleanMarkers(state[stateName + parts[2]]);
+    }
     state[stateName + parts[2]] = parts[3];
     showConfig();
     paladinCheck();
@@ -276,24 +293,29 @@ const PaladinAura = (function() {
    * range of them.
    */
   function paladinCheck() {
-    if (getState('active') == 'false') {return;} // stops here if the API is inactive
+    if (getState('active') == 'false') {
+      return;
+    } // stops here if the API is inactive
     let page = getObj('page', Campaign().get('playerpageid')),
       pixelsPerSquare = page.get('snapping_increment') * 70,
       unitsPerSquare = page.get('scale_number'),
       allTokens = findObjs({
         _type: 'graphic',
-        _subtype: 'token',
-        _pageid: Campaign().get('playerpageid')
+        _subtype: 'token'
       }) as Graphic[],
       playerTokens = allTokens.filter((token) => {
         let charID = token.get('represents');
-        return !getObj('character', charID)
-          ? false
-          : +getAttr(charID, 'npc') == 1
+        return (
+          (!getObj('character', charID)
             ? false
-            : true;
+            : +getAttr(charID, 'npc') == 1
+              ? false
+              : true) && getActivePages().includes(token.get('_pageid'))
+        );
       });
-    if (page.get('scale_units') != 'ft') {return;} // stops here if scale is not feet
+    if (page.get('scale_units') != 'ft') {
+      return;
+    } // stops here if scale is not feet
     let auraTokens = playerTokens.map((token) => {
       let charID = token.get('represents'),
         output: PaladinObject;
@@ -399,7 +421,9 @@ const PaladinAura = (function() {
       _characterid: id,
       name: name
     }) as Attribute[];
-    if (attr.length > 0) {return attr[0].get('current');}
+    if (attr.length > 0) {
+      return attr[0].get('current');
+    }
     return 'undefined';
   }
 
@@ -488,7 +512,9 @@ const PaladinAura = (function() {
         Campaign().get('_token_markers') || '[]'
       ) as TokenMarkerObject[];
       tokenMarkerSort(markerObjs, 'name').forEach((m) => {
-        if (m.name != 'bolt-shield') {output += '|' + m.name + ',status_' + m.tag;}
+        if (m.name != 'bolt-shield') {
+          output += '|' + m.name + ',status_' + m.tag;
+        }
       });
       states.find((s) => {
         return s.name == 'status_marker';

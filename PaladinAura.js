@@ -1,8 +1,8 @@
 /* eslint-disable no-undef */
-var PaladinAura = (function () {
-    var version = '1.0.4';
-    var stateName = 'PaladinAura_';
-    var states = [
+const PaladinAura = (function () {
+    const version = '1.0.4';
+    const stateName = 'PaladinAura_';
+    let states = [
         {
             name: 'active',
             hide: 'true'
@@ -10,55 +10,65 @@ var PaladinAura = (function () {
         {
             name: 'diagonal_calc_override',
             acceptables: ['none', 'foure', 'threefive', 'pythagorean', 'manhattan'],
-            "default": 'none'
+            default: 'none'
         },
         {
             name: 'status_marker',
-            "default": 'status_bolt-shield',
+            default: 'status_bolt-shield',
             ignore: 'true',
             customConfig: ''
         }
     ];
-    var name = 'Paladin Aura';
-    var nameError = name + ' ERROR';
-    var nameLog = name + ': ';
-    var apiCall = '!pa';
-    var playerName, playerID, parts;
+    const name = 'Paladin Aura';
+    const nameError = name + ' ERROR';
+    const nameLog = name + ': ';
+    const apiCall = '!pa';
+    let playerName, playerID, parts;
+    const getActivePages = () => [...new Set([
+            Campaign().get('playerpageid'),
+            ...Object.values(Campaign().get('playerspecificpages')),
+            ...findObjs({
+                type: 'player',
+                online: true
+            })
+                .filter((p) => playerIsGM(p.id))
+                .map((p) => p.get('_lastpage'))
+        ])];
     /**
      * Checks each macro from the macroArr array to ensure their functions are up to date.
      */
     function checkMacros() {
-        var playerList = findObjs({ _type: 'player', _online: true });
-        var gm = playerList.find(function (player) {
+        const playerList = findObjs({ _type: 'player', _online: true });
+        const gm = playerList.find((player) => {
             return playerIsGM(player.id) === true;
         });
-        var macroArr = [
+        const macroArr = [
             {
                 name: 'PaladinAuraHelp',
-                action: apiCall + " help"
+                action: `${apiCall} help`
             },
             {
                 name: 'PaladinAuraToggle',
-                action: "" + apiCall
+                action: `${apiCall}`
             },
             {
                 name: 'PaladinAuraConfig',
-                action: apiCall + " config"
+                action: `${apiCall} config`
             }
         ];
-        macroArr.forEach(function (macro) {
-            var macroObj = findObjs({
+        macroArr.forEach((macro) => {
+            const macroObj = findObjs({
                 _type: 'macro',
                 name: macro.name
             })[0];
             if (macroObj) {
                 if (macroObj.get('visibleto') !== 'all') {
                     macroObj.set('visibleto', 'all');
-                    toChat("**Macro '" + macro.name + "' was made visible to all.**", true);
+                    toChat(`**Macro '${macro.name}' was made visible to all.**`, true);
                 }
                 if (macroObj.get('action') !== macro.action) {
                     macroObj.set('action', macro.action);
-                    toChat("**Macro '" + macro.name + "' was corrected.**", true);
+                    toChat(`**Macro '${macro.name}' was corrected.**`, true);
                 }
             }
             else if (gm && playerIsGM(gm.id)) {
@@ -68,7 +78,7 @@ var PaladinAura = (function () {
                     action: macro.action,
                     visibleto: 'all'
                 });
-                toChat("**Macro '" + macro.name + "' was created and assigned to " + (gm.get('_displayname') + ' '.split(' ', 1)[0]) + ".**", true);
+                toChat(`**Macro '${macro.name}' was created and assigned to ${gm.get('_displayname') + ' '.split(' ', 1)[0]}.**`, true);
             }
         });
     }
@@ -76,17 +86,17 @@ var PaladinAura = (function () {
      * Outputs help interface to the roll20 chat.
      */
     function showHelp() {
-        var commandsArr = [
+        const commandsArr = [
             {
-                name: apiCall + " help",
+                name: `${apiCall} help`,
                 desc: ['Lists all commands, their parameters, and their usage.']
             },
             {
-                name: apiCall + " config",
+                name: `${apiCall} config`,
                 desc: ['Shows config and buttons that change settings.']
             },
             {
-                name: "" + apiCall,
+                name: `${apiCall}`,
                 desc: ['Toggles the Paladin Aura API on and off.'],
                 link: 'active'
             }
@@ -96,9 +106,9 @@ var PaladinAura = (function () {
             '}} {{Current=' +
             version +
             '}}', undefined, playerName);
-        commandsArr.forEach(function (command) {
-            var output = '&{template:default} {{name=' + code(command.name) + '}}{{Function=';
-            for (var i = 0; i < command.desc.length; i++) {
+        commandsArr.forEach((command) => {
+            let output = '&{template:default} {{name=' + code(command.name) + '}}{{Function=';
+            for (let i = 0; i < command.desc.length; i++) {
                 if (i % 2 === 1) {
                     output += '{{=';
                 }
@@ -112,20 +122,20 @@ var PaladinAura = (function () {
     }
     function showConfig() {
         updateCustomConfigs();
-        var output = "&{template:default} {{name=" + name + " Config}}";
-        states.forEach(function (s) {
+        let output = `&{template:default} {{name=${name} Config}}`;
+        states.forEach((s) => {
             if (s.hide === 'true') {
                 return;
             }
-            var acceptableValues = s.acceptables
+            const acceptableValues = s.acceptables
                 ? s.acceptables
                 : ['true', 'false'];
-            var defaultValue = s["default"] ? s["default"] : 'true';
-            var currentValue = getState(s.name);
-            var stringVals = s.customConfig == undefined
+            const defaultValue = s.default ? s.default : 'true';
+            const currentValue = getState(s.name);
+            const stringVals = s.customConfig == undefined
                 ? valuesToString(acceptableValues, defaultValue)
                 : s.customConfig;
-            output += "{{" + s.name + "=[" + currentValue + "](" + apiCall + " config " + s.name + " ?{New " + s.name + " value" + stringVals + "})}}";
+            output += `{{${s.name}=[${currentValue}](${apiCall} config ${s.name} ?{New ${s.name} value${stringVals}})}}`;
         });
         toChat(output, undefined, playerName);
         /**
@@ -135,13 +145,13 @@ var PaladinAura = (function () {
          * @param defaultValue The state's default value.
          */
         function valuesToString(values, defaultValue) {
-            var output = '';
-            var index = values.indexOf(defaultValue);
+            let output = '';
+            const index = values.indexOf(defaultValue);
             if (index !== -1) {
                 values.splice(index, 1);
                 values.unshift(defaultValue);
             }
-            values.forEach(function (v) {
+            values.forEach((v) => {
                 output += '|' + v;
             });
             return output;
@@ -170,10 +180,10 @@ var PaladinAura = (function () {
         findObjs({
             _type: 'graphic'
         })
-            .filter(function (g) {
+            .filter((g) => {
             return g.get(oldMarker) != 'false';
         })
-            .forEach(function (g) {
+            .forEach((g) => {
             g.set(oldMarker, 'false');
         });
     }
@@ -218,23 +228,22 @@ var PaladinAura = (function () {
         if (getState('active') == 'false') {
             return;
         } // stops here if the API is inactive
-        var page = getObj('page', Campaign().get('playerpageid')), pixelsPerSquare = page.get('snapping_increment') * 70, unitsPerSquare = page.get('scale_number'), allTokens = findObjs({
+        let page = getObj('page', Campaign().get('playerpageid')), pixelsPerSquare = page.get('snapping_increment') * 70, unitsPerSquare = page.get('scale_number'), allTokens = findObjs({
             _type: 'graphic',
-            _subtype: 'token',
-            _pageid: Campaign().get('playerpageid')
-        }), playerTokens = allTokens.filter(function (token) {
-            var charID = token.get('represents');
-            return !getObj('character', charID)
+            _subtype: 'token'
+        }), playerTokens = allTokens.filter((token) => {
+            let charID = token.get('represents');
+            return (!getObj('character', charID)
                 ? false
                 : +getAttr(charID, 'npc') == 1
                     ? false
-                    : true;
+                    : true) && (getActivePages().includes(token.get('_pageid')));
         });
         if (page.get('scale_units') != 'ft') {
             return;
         } // stops here if scale is not feet
-        var auraTokens = playerTokens.map(function (token) {
-            var charID = token.get('represents'), output;
+        let auraTokens = playerTokens.map((token) => {
+            let charID = token.get('represents'), output;
             if (getAttr(charID, 'class')
                 .toLowerCase()
                 .includes('paladin') &&
@@ -243,7 +252,7 @@ var PaladinAura = (function () {
                 output = setOutput('base_level');
             }
             else {
-                ['multiclass1', 'multiclass2', 'multiclass3'].forEach(function (className) {
+                ['multiclass1', 'multiclass2', 'multiclass3'].forEach((className) => {
                     if (+getAttr(charID, className + '_flag') == 1) {
                         if (getAttr(charID, className)
                             .toLowerCase()
@@ -266,7 +275,7 @@ var PaladinAura = (function () {
              * @param levelAttr The attribute of the character object that represents their paladin level.
              */
             function setOutput(levelAttr) {
-                var output = {
+                let output = {
                     token: token,
                     level: +getAttr(charID, levelAttr),
                     left: +token.get('left'),
@@ -277,13 +286,13 @@ var PaladinAura = (function () {
                 return output;
             }
         });
-        var paladinTokens = auraTokens.filter(function (obj) {
+        let paladinTokens = auraTokens.filter((obj) => {
             return obj.token !== undefined;
         });
-        playerTokens.forEach(function (token) {
-            var saveBonus;
-            paladinTokens.forEach(function (paladin) {
-                var distLimit = (paladin.radius / unitsPerSquare) * pixelsPerSquare, xDist = Math.abs(token.get('left') - paladin.left), yDist = Math.abs(token.get('top') - paladin.top), distTotal = xDist >= yDist ? distCalc(xDist, yDist) : distCalc(yDist, xDist);
+        playerTokens.forEach((token) => {
+            let saveBonus;
+            paladinTokens.forEach((paladin) => {
+                let distLimit = (paladin.radius / unitsPerSquare) * pixelsPerSquare, xDist = Math.abs(token.get('left') - paladin.left), yDist = Math.abs(token.get('top') - paladin.top), distTotal = xDist >= yDist ? distCalc(xDist, yDist) : distCalc(yDist, xDist);
                 if (distTotal <= distLimit) {
                     saveBonus =
                         saveBonus >= paladin.chaBonus ? saveBonus : paladin.chaBonus;
@@ -292,7 +301,7 @@ var PaladinAura = (function () {
                     saveBonus = saveBonus ? saveBonus : 0;
                 }
                 function distCalc(distA, distB) {
-                    var diagonal = getState('diagonal_calc_override') == 'none'
+                    let diagonal = getState('diagonal_calc_override') == 'none'
                         ? page.get('diagonaltype')
                         : getState('diagonal_calc_override');
                     if (diagonal == 'threefive') {
@@ -315,7 +324,7 @@ var PaladinAura = (function () {
         });
     }
     function getAttr(id, name) {
-        var attr = findObjs({
+        let attr = findObjs({
             _type: 'attribute',
             _characterid: id,
             name: name
@@ -332,13 +341,13 @@ var PaladinAura = (function () {
      */
     function setBuff(token, value) {
         setMarker(token, value);
-        var charID = token.get('represents'), char = getObj('character', charID);
+        let charID = token.get('represents'), char = getObj('character', charID);
         if (!char) {
-            error("Player Character '" + token.get('name') + "' had no character sheet.", 2);
+            error(`Player Character '${token.get('name')}' had no character sheet.`, 2);
             return;
         }
         else {
-            var attr = findObjs({
+            let attr = findObjs({
                 _type: 'attribute',
                 _characterid: charID,
                 name: 'paladin_buff'
@@ -350,9 +359,9 @@ var PaladinAura = (function () {
                     current: '0'
                 });
             }
-            var attrValue = attr.get('current');
+            let attrValue = attr.get('current');
             if (+value != +attrValue) {
-                var adjust = +value - +attrValue;
+                let adjust = +value - +attrValue;
                 attr.setWithWorker('current', value.toString());
                 modAttr(token, 'globalsavemod', adjust);
             }
@@ -360,7 +369,7 @@ var PaladinAura = (function () {
         return;
     }
     function modAttr(token, attrName, value) {
-        var charID = token.get('represents'), attr = findObjs({
+        let charID = token.get('represents'), attr = findObjs({
             _type: 'attribute',
             _characterid: charID,
             name: attrName
@@ -374,7 +383,7 @@ var PaladinAura = (function () {
             return;
         }
         else {
-            var attrValue = attr.get('current'), adjust = +attrValue + +value;
+            let attrValue = attr.get('current'), adjust = +attrValue + +value;
             attr.setWithWorker('current', adjust.toString());
             return;
         }
@@ -398,14 +407,14 @@ var PaladinAura = (function () {
             updateTokenMarkers();
         }
         function updateTokenMarkers() {
-            var output = '|bolt-shield,status_bolt-shield';
-            var markerObjs = JSON.parse(Campaign().get('_token_markers') || '[]');
-            tokenMarkerSort(markerObjs, 'name').forEach(function (m) {
+            let output = '|bolt-shield,status_bolt-shield';
+            const markerObjs = JSON.parse(Campaign().get('_token_markers') || '[]');
+            tokenMarkerSort(markerObjs, 'name').forEach((m) => {
                 if (m.name != 'bolt-shield') {
                     output += '|' + m.name + ',status_' + m.tag;
                 }
             });
-            states.find(function (s) {
+            states.find((s) => {
                 return s.name == 'status_marker';
             }).customConfig = output;
         }
@@ -417,14 +426,14 @@ var PaladinAura = (function () {
      * @param prop Optional. The property to sort by (for objects).
      */
     function tokenMarkerSort(arr, prop) {
-        return arr.sort(function (a, b) {
+        return arr.sort((a, b) => {
             return a[prop] < b[prop] ? -1 : a[prop] > b[prop] ? 1 : 0;
         });
     }
     function toggleActive() {
-        var stateInitial = getState('active');
+        const stateInitial = getState('active');
         state[stateName + 'active'] = stateInitial == 'true' ? 'false' : 'true';
-        var output = "**Paladin Aura " + (stateInitial == 'false' ? 'Enabled' : 'Disabled') + ".**";
+        let output = `**Paladin Aura ${stateInitial == 'false' ? 'Enabled' : 'Disabled'}.**`;
         if (stateInitial == 'true') {
             output += '** All aura bonuses set to 0.**';
             // for each token on the player page
@@ -433,17 +442,17 @@ var PaladinAura = (function () {
                 _pageid: Campaign().get('playerpageid')
             })
                 // filter out any tokens that represent no sheet
-                .filter(function (t) {
-                var token = getObj('graphic', t.id);
-                var char = getObj('character', token.get('represents'));
+                .filter((t) => {
+                const token = getObj('graphic', t.id);
+                const char = getObj('character', token.get('represents'));
                 if (char != undefined) {
                     return true;
                 }
                 return false;
             })
                 // for each of the remaining tokens, set buff to zero
-                .forEach(function (t) {
-                var token = getObj('graphic', t.id);
+                .forEach((t) => {
+                const token = getObj('graphic', t.id);
                 setBuff(token, 0);
             });
         }
@@ -461,8 +470,8 @@ var PaladinAura = (function () {
             '</span>');
     }
     function toChat(message, success, target) {
-        var whisper = target ? '/w ' + target + ' ' : '';
-        var style = '<div>';
+        const whisper = target ? '/w ' + target + ' ' : '';
+        let style = '<div>';
         if (success === true) {
             style =
                 '<br><div style="background-color: #5cd65c; color: Black; padding: 5px; border-radius: 10px;">';
@@ -475,17 +484,17 @@ var PaladinAura = (function () {
     }
     function error(error, code) {
         if (playerName) {
-            sendChat(nameError, "/w " + playerName + " <br><div style='background-color: #ff6666; color: Black; padding: 5px; border-radius: 10px;'>**" + error + "** Error code " + code + ".</div>");
+            sendChat(nameError, `/w ${playerName} <br><div style='background-color: #ff6666; color: Black; padding: 5px; border-radius: 10px;'>**${error}** Error code ${code}.</div>`);
         }
         else {
-            sendChat(nameError, "<br><div style='background-color: #ff6666; color: Black; padding: 5px; border-radius: 10px;'>**" + error + "** Error code " + code + ".</div>");
+            sendChat(nameError, `<br><div style='background-color: #ff6666; color: Black; padding: 5px; border-radius: 10px;'>**${error}** Error code ${code}.</div>`);
         }
-        log(nameLog + error + (" Error code " + code + "."));
+        log(nameLog + error + ` Error code ${code}.`);
     }
     function startupChecks() {
-        states.forEach(function (s) {
-            var acceptables = s.acceptables ? s.acceptables : ['true', 'false'];
-            var defaultVal = s["default"] ? s["default"] : 'true';
+        states.forEach((s) => {
+            const acceptables = s.acceptables ? s.acceptables : ['true', 'false'];
+            const defaultVal = s.default ? s.default : 'true';
             if (state[stateName + s.name] == undefined ||
                 (!acceptables.includes(state[stateName + s.name]) && s.ignore != 'true')) {
                 error('"' +
@@ -510,7 +519,7 @@ var PaladinAura = (function () {
         RegisterEventHandlers: registerEventHandlers
     };
 })();
-on('ready', function () {
+on('ready', () => {
     PaladinAura.CheckMacros();
     PaladinAura.StartupChecks();
     PaladinAura.RegisterEventHandlers();
