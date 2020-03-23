@@ -24,7 +24,8 @@ const PaladinAura = (function () {
     const nameLog = name + ': ';
     const apiCall = '!pa';
     let playerName, playerID, parts;
-    const getActivePages = () => [...new Set([
+    const getActivePages = () => [
+        ...new Set([
             Campaign().get('playerpageid'),
             ...Object.values(Campaign().get('playerspecificpages')),
             ...findObjs({
@@ -33,7 +34,8 @@ const PaladinAura = (function () {
             })
                 .filter((p) => playerIsGM(p.id))
                 .map((p) => p.get('_lastpage'))
-        ])];
+        ])
+    ];
     /**
      * Checks each macro from the macroArr array to ensure their functions are up to date.
      */
@@ -124,7 +126,7 @@ const PaladinAura = (function () {
         updateCustomConfigs();
         let output = `&{template:default} {{name=${name} Config}}`;
         states.forEach((s) => {
-            if (s.hide === 'true') {
+            if (s.hide == 'true') {
                 return;
             }
             const acceptableValues = s.acceptables
@@ -233,11 +235,11 @@ const PaladinAura = (function () {
             _subtype: 'token'
         }), playerTokens = allTokens.filter((token) => {
             let charID = token.get('represents');
-            return (!getObj('character', charID)
+            return ((!getObj('character', charID)
                 ? false
                 : +getAttr(charID, 'npc') == 1
                     ? false
-                    : true) && (getActivePages().includes(token.get('_pageid')));
+                    : true) && getActivePages().includes(token.get('_pageid')));
         });
         if (page.get('scale_units') != 'ft') {
             return;
