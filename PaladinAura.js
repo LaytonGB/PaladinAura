@@ -1,6 +1,6 @@
 /* eslint-disable no-undef */
 const PaladinAura = (function () {
-    const version = '1.0.4';
+    const version = '1.0.5';
     const stateName = 'PaladinAura_';
     let states = [
         {
