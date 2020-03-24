@@ -8,6 +8,8 @@ const PaladinAura = (function() {
   type StringBool = 'true' | 'false';
 
   /**
+   * This is the interface used to check the "states" object, and to ensure that
+   * all Roll20 state object changes go smoothly.
    * @param name A name for this setting. Because this name is to be added to the
    * states object, it is best to keep this name uniform.
    * @param acceptables Optional. Acceptable values for this state.
