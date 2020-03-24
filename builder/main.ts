@@ -75,14 +75,17 @@ const PaladinAura = (function() {
 
   const getActivePages = () => [
     ...new Set([
-      Campaign().get('playerpageid'),
-      ...Object.values(Campaign().get('playerspecificpages')),
-      ...(findObjs({
+      Campaign().get('playerpageid') as string,
+      ...(Object.values(Campaign().get('playerspecificpages')) as string[]),
+      ...((findObjs({
         type: 'player',
         online: true
       }) as Player[])
         .filter((p) => playerIsGM(p.id))
         .map((p) => p.get('_lastpage'))
+        .filter(
+          (p) => getObj('page', p).get('scale_units') == 'ft' // excludes pages not measured in feet
+        ) as string[])
     ])
   ];
 
@@ -296,26 +299,20 @@ const PaladinAura = (function() {
     if (getState('active') == 'false') {
       return;
     } // stops here if the API is inactive
-    let page = getObj('page', Campaign().get('playerpageid')),
-      pixelsPerSquare = page.get('snapping_increment') * 70,
-      unitsPerSquare = page.get('scale_number'),
-      allTokens = findObjs({
-        _type: 'graphic',
-        _subtype: 'token'
-      }) as Graphic[],
-      playerTokens = allTokens.filter((token) => {
-        let charID = token.get('represents');
-        return (
-          (!getObj('character', charID)
-            ? false
-            : +getAttr(charID, 'npc') == 1
-              ? false
-              : true) && getActivePages().includes(token.get('_pageid'))
-        );
-      });
-    if (page.get('scale_units') != 'ft') {
-      return;
-    } // stops here if scale is not feet
+    let allTokens = findObjs({
+      _type: 'graphic',
+      _subtype: 'token'
+    }) as Graphic[];
+    let playerTokens = allTokens.filter((token) => {
+      let charID = token.get('represents'),
+        char = getObj('character', charID),
+        attr = +getAttr(charID, 'npc');
+      return (
+        char != undefined &&
+        attr != 1 &&
+        getActivePages().includes(token.get('_pageid'))
+      );
+    });
     let auraTokens = playerTokens.map((token) => {
       let charID = token.get('represents'),
         output: PaladinObject;
@@ -368,7 +365,10 @@ const PaladinAura = (function() {
       return obj.token !== undefined;
     }) as PaladinObject[];
     playerTokens.forEach((token) => {
-      let saveBonus: number;
+      let saveBonus: number,
+        page = getObj('page', token.get('_pageid')),
+        pixelsPerSquare = page.get('snapping_increment') * 70,
+        unitsPerSquare = page.get('scale_number');
       paladinTokens.forEach((paladin) => {
         let distLimit = (paladin.radius / unitsPerSquare) * pixelsPerSquare,
           xDist = Math.abs(token.get('left') - paladin.left),
