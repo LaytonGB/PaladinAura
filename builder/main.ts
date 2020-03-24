@@ -4,8 +4,9 @@ const PaladinAura = (function() {
   const version = '1.0.5';
 
   type StateVar = 'active' | 'diagonal_calc_override' | 'status_marker';
-
-  type StringBool = 'true' | 'false';
+  type ActiveValues = 'true' | 'false';
+  type DiagonalCalcValues = 'none' | 'foure' | 'threefive' | 'pythagorean' | 'manhattan';
+  type StatusMarkerValues = string;
 
   /**
    * This is the interface used to check the "states" object, and to ensure that
@@ -23,8 +24,8 @@ const PaladinAura = (function() {
     name: StateVar;
     acceptables?: string[];
     default?: string;
-    ignore?: StringBool;
-    hide?: StringBool;
+    ignore?: ActiveValues;
+    hide?: ActiveValues;
     customConfig?: string;
   }
 
@@ -509,18 +510,27 @@ const PaladinAura = (function() {
     }
 
     function updateTokenMarkers() {
-      let output = '|bolt-shield,status_bolt-shield';
-      const markerObjs = JSON.parse(
-        Campaign().get('_token_markers') || '[]'
-      ) as TokenMarkerObject[];
-      tokenMarkerSort(markerObjs, 'name').forEach((m) => {
-        if (m.name != 'bolt-shield') {
-          output += '|' + m.name + ',status_' + m.tag;
-        }
-      });
-      states.find((s) => {
-        return s.name == 'status_marker';
-      }).customConfig = output;
+      states.filter((s) => {
+        s.customConfig != undefined;
+      })
+        .forEach((s) => {
+          switch (s.name) {
+          case 'status_marker': {
+            let output = '|bolt-shield,status_bolt-shield';
+            const markerObjs = JSON.parse(
+              Campaign().get('_token_markers') || '[]'
+            ) as TokenMarkerObject[];
+            tokenMarkerSort(markerObjs, 'name').forEach((m) => {
+              if (m.name != 'bolt-shield') {
+                output += '|' + m.name + ',status_' + m.tag;
+              }
+            });
+            states.find((s) => {
+              return s.name == 'status_marker';
+            }).customConfig = output;
+          }
+          }
+        });
     }
   }
 
