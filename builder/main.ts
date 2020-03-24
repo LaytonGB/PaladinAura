@@ -5,8 +5,28 @@ const PaladinAura = (function() {
 
   type StateVar = 'active' | 'diagonal_calc_override' | 'status_marker';
   type ActiveValues = 'true' | 'false';
-  type DiagonalCalcValues = 'none' | 'foure' | 'threefive' | 'pythagorean' | 'manhattan';
+  function isActiveValue(val: string): boolean {
+    return ['true', 'false'].includes(val);
+  }
+  type DiagonalCalcValues =
+    | 'none'
+    | 'foure'
+    | 'threefive'
+    | 'pythagorean'
+    | 'manhattan';
+  function isDiagonalCalcValue(val: string): boolean {
+    return ['none', 'foure', 'threefive', 'pythagorean', 'manhattan'].includes(
+      val
+    );
+  }
   type StatusMarkerValues = string;
+  function isStatusMarkerValue(val: string): boolean {
+    const markerObjs = JSON.parse(
+      Campaign().get('_token_markers') || '[]'
+    ) as TokenMarkerObject[];
+    const tokenMarkerTags = markerObjs.map((m) => m.tag);
+    return tokenMarkerTags.includes(val);
+  }
 
   /**
    * This is the interface used to check the "states" object, and to ensure that
@@ -52,7 +72,7 @@ const PaladinAura = (function() {
   }
 
   const stateName = 'PaladinAura_';
-  let states: StateForm[] = [
+  const states: StateForm[] = [
     {
       name: 'active',
       hide: 'true'
@@ -66,7 +86,7 @@ const PaladinAura = (function() {
       name: 'status_marker',
       default: 'status_bolt-shield',
       ignore: 'true',
-      customConfig: ''
+      customConfig: 'true'
     }
   ];
   const name = 'Paladin Aura';
@@ -238,7 +258,7 @@ const PaladinAura = (function() {
       '**' +
         parts[2] +
         '** has been changed **from ' +
-        state[stateName + parts[2]] +
+        getState(parts[2] as StateVar) +
         ' to ' +
         parts[3] +
         '**.',
@@ -246,9 +266,9 @@ const PaladinAura = (function() {
       'gm'
     );
     if (parts[2] == 'status_marker') {
-      cleanMarkers(state[stateName + parts[2]]);
+      cleanMarkers(getState(parts[2] as StateVar));
     }
-    state[stateName + parts[2]] = parts[3];
+    setState(parts[2] as StateVar, parts[3]);
     showConfig();
     paladinCheck();
   }
@@ -510,25 +530,22 @@ const PaladinAura = (function() {
     }
 
     function updateTokenMarkers() {
-      states.filter((s) => {
-        s.customConfig != undefined;
-      })
+      const markerObjs = JSON.parse(
+        Campaign().get('_token_markers') || '[]'
+      ) as TokenMarkerObject[];
+      states
+        .filter((s) => s.customConfig == 'true')
         .forEach((s) => {
           switch (s.name) {
-          case 'status_marker': {
-            let output = '|bolt-shield,status_bolt-shield';
-            const markerObjs = JSON.parse(
-              Campaign().get('_token_markers') || '[]'
-            ) as TokenMarkerObject[];
-            tokenMarkerSort(markerObjs, 'name').forEach((m) => {
-              if (m.name != 'bolt-shield') {
-                output += '|' + m.name + ',status_' + m.tag;
-              }
-            });
-            states.find((s) => {
-              return s.name == 'status_marker';
-            }).customConfig = output;
-          }
+            case 'status_marker': {
+              let output = '|bolt-shield,status_bolt-shield';
+              tokenMarkerSort(markerObjs, 'name').forEach((m) => {
+                if (m.name != 'bolt-shield') {
+                  output += '|' + m.name + ',status_' + m.tag;
+                }
+              });
+              s.customConfig = output;
+            }
           }
         });
     }
@@ -551,10 +568,11 @@ const PaladinAura = (function() {
 
   function toggleActive() {
     const stateInitial = getState('active');
-    state[stateName + 'active'] = stateInitial == 'true' ? 'false' : 'true';
-    let output = `**Paladin Aura ${
-      stateInitial == 'false' ? 'Enabled' : 'Disabled'
-    }.**`;
+    setState('active', stateInitial == 'true' ? 'false' : 'true');
+    let output =
+      '**Paladin Aura ' + stateInitial == 'false'
+        ? 'Enabled'
+        : 'Disabled' + '.**';
     if (stateInitial == 'true') {
       output += '** All aura bonuses set to 0.**';
       // for each token on the player page
@@ -584,6 +602,33 @@ const PaladinAura = (function() {
 
   function getState(value: StateVar): string {
     return state[stateName + value];
+  }
+
+  function setState(targetState: StateVar, newValue: string): void {
+    let valid: boolean;
+    switch (targetState) {
+      case 'active':
+        valid = isActiveValue(newValue);
+        break;
+      case 'diagonal_calc_override':
+        valid = isDiagonalCalcValue(newValue);
+        break;
+      case 'status_marker':
+        valid = isStatusMarkerValue(newValue);
+        break;
+    }
+    if (valid) {
+      state[stateName + targetState] = newValue;
+    } else {
+      error(
+        'Tried to set state "' +
+          targetState +
+          '" with unacceptable value "' +
+          newValue +
+          '".',
+        -2
+      );
+    }
   }
 
   function code(snippet: string) {
@@ -627,20 +672,20 @@ const PaladinAura = (function() {
       const acceptables = s.acceptables ? s.acceptables : ['true', 'false'];
       const defaultVal = s.default ? s.default : 'true';
       if (
-        state[stateName + s.name] == undefined ||
-        (!acceptables.includes(state[stateName + s.name]) && s.ignore != 'true')
+        getState(s.name) == undefined ||
+        (!acceptables.includes(getState(s.name)) && s.ignore != 'true')
       ) {
         error(
           '"' +
             s.name +
             '" value was "' +
-            state[stateName + s.name] +
+            getState(s.name) +
             '" but has now been set to its default value, "' +
             defaultVal +
             '".',
           -1
         );
-        state[stateName + s.name] = defaultVal;
+        setState(s.name, defaultVal);
       }
     });
   }
