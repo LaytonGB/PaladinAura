@@ -26,6 +26,7 @@
     "curly": ["error", "all"],
     "arrow-parens": ["error", "always"],
     "no-unused-vars": ["warn"],
-    "no-empty": ["warn"]
+    "no-empty": ["warn"],
+    "arrow-spacing": ["warn", { "before": true, "after": true }]
   }
 }
