@@ -22,7 +22,7 @@
   },
   "homepage": "https://github.com/LaytonGB/PaladinAura#readme",
   "dependencies": {
-    "@types/cheerio": "^0.22.16",
+    "@types/cheerio": "^0.22.17",
     "@types/mock20": "git+https://github.com/Carl-Hugo/types-mock20.git",
     "@types/roll20": "git+https://github.com/LaytonGB/types-roll20.git",
     "@types/roll20-commandshell": "git+https://github.com/Carl-Hugo/types-roll20-CommandShell.git"
