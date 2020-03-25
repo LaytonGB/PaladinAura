@@ -1,8 +1,5 @@
 // TODO
-/*- Add ability to all scanned paladins
-    "ToggleAuraTarget"
-    "!pa toggleAuraTarget @{charID-A} @{target|charID-B}"
-  - Respond to this by adding attr to target
+/*- Respond to this by adding attr to target
     "PaladinAura_charID-A"
     current:
       if true make false,
@@ -217,18 +214,21 @@ const PaladinAura = (function () {
     }
     function handleInput(msg) {
         parts = msg.content.split(' ');
-        if (msg.type === 'api' && parts[0] === apiCall) {
+        if (msg.type == 'api' && parts[0] == apiCall) {
             playerName = msg.who.split(' ', 1)[0];
             playerID = msg.playerid;
-            if ([undefined, 'config', 'help'].includes(parts[1])) {
-                if (parts[1] === 'help') {
+            if ([undefined, 'config', 'help', 'toggleAuraTarget'].includes(parts[1])) {
+                if (parts[1] == 'help') {
                     showHelp();
+                }
+                else if (parts[1] == 'toggleAuraTarget') {
+                    toggleAuraTarget(parts[2], parts[3]);
                 }
                 else if (playerIsGM(playerID)) {
                     if (!parts[1]) {
                         toggleActive();
                     }
-                    else if (parts[1] === 'config') {
+                    else if (parts[1] == 'config') {
                         if (parts[2]) {
                             setConfig(parts);
                         }
@@ -416,6 +416,7 @@ const PaladinAura = (function () {
                 action: '!pa toggleAuraTarget @{character_id} @{target|character_id}'
             }
         ];
+        let configChanged = false;
         paladinAbilityArr.forEach((a) => {
             const ability = findObjs({
                 _type: 'ability',
@@ -424,17 +425,57 @@ const PaladinAura = (function () {
             })[0];
             if (ability != undefined) {
                 if (ability.get('action') != a.action) {
-                    ability.setWithWorker('action', a.action);
+                    configChanged = true;
+                    ability.set('action', a.action);
                 }
             }
             else {
+                configChanged = true;
                 createObj('ability', {
                     _characterid: pID,
                     name: a.name,
-                    action: a.action
+                    action: a.action,
+                    istokenaction: true
                 });
             }
         });
+        if (configChanged) {
+            toChat('Some Paladin abilities were wrong. They have been fixed.', true);
+        }
+    }
+    function toggleAuraTarget(pID, tID) {
+        let paladin = getObj('character', pID), target = getObj('character', tID);
+        if (paladin == undefined || target == undefined) {
+            error('A target was undefined.', 21);
+            return;
+        }
+        let newValue;
+        let attr = findObjs({
+            _type: 'attribute',
+            _characterid: tID,
+            name: stateName + pID
+        })[0];
+        if (attr != undefined) {
+            newValue = attr.get('current') == 'true' ? 'false' : 'true';
+            attr.set('current', newValue);
+        }
+        else {
+            let targetIsNPC = +getAttr(tID, 'npc') == 1 ? true : false;
+            newValue = targetIsNPC ? 'true' : 'false';
+            createObj('attribute', {
+                _characterid: tID,
+                name: stateName + pID,
+                current: newValue
+            });
+        }
+        // TODO integrate true or false in output
+        toChat('**' +
+            paladin.get('name') +
+            ' has toggled their aura to "' +
+            newValue +
+            '" for ' +
+            target.get('name') +
+            '**', newValue == 'true');
     }
     /**
      * Sets or removes a marker on a token based on the bonus it has started
