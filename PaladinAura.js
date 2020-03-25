@@ -1,4 +1,17 @@
-/* eslint-disable no-undef */
+// TODO
+/*- Add ability to all scanned paladins
+    "ToggleAuraTarget"
+    "!pa toggleAuraTarget @{charID-A} @{target|charID-B}"
+  - Respond to this by adding attr to target
+    "PaladinAura_charID-A"
+    current:
+      if true make false,
+      if false make true,
+      if missing
+        if npc make true,
+        if player make false
+  - For each paladin if target token has attr do/dont target based on value
+*/
 const PaladinAura = (function () {
     const version = '1.0.5';
     function isActiveValue(val) {
@@ -287,18 +300,22 @@ const PaladinAura = (function () {
              */
             function setOutput(levelAttr) {
                 let output = {
-                    token: token,
-                    level: +getAttr(charID, levelAttr),
-                    left: +token.get('left'),
-                    top: +token.get('top'),
                     chaBonus: Math.max(+getAttr(charID, 'charisma_mod'), 1),
-                    radius: +getAttr(charID, levelAttr) >= 18 ? 30 : 10
+                    id: charID,
+                    left: +token.get('left'),
+                    level: +getAttr(charID, levelAttr),
+                    radius: +getAttr(charID, levelAttr) >= 18 ? 30 : 10,
+                    token: token,
+                    top: +token.get('top')
                 };
                 return output;
             }
         });
         let paladinTokens = auraTokens.filter((obj) => {
             return obj.token !== undefined;
+        });
+        paladinTokens.forEach((p) => {
+            paladinAbilities(p.id);
         });
         playerTokens.forEach((token) => {
             let saveBonus, page = getObj('page', token.get('_pageid')), pixelsPerSquare = page.get('snapping_increment') * 70, unitsPerSquare = page.get('scale_number');
@@ -333,17 +350,6 @@ const PaladinAura = (function () {
             saveBonus = saveBonus ? saveBonus : 0;
             setBuff(token, saveBonus);
         });
-    }
-    function getAttr(id, name) {
-        let attr = findObjs({
-            _type: 'attribute',
-            _characterid: id,
-            name: name
-        });
-        if (attr.length > 0) {
-            return attr[0].get('current');
-        }
-        return 'undefined';
     }
     /**
      * Adjusts the Paladin bonus being given to the provided token.
@@ -398,6 +404,37 @@ const PaladinAura = (function () {
             attr.setWithWorker('current', adjust.toString());
             return;
         }
+    }
+    /**
+     * Applies all paladin abilities to a character.
+     * @param pID A Character ID.
+     */
+    function paladinAbilities(pID) {
+        const paladinAbilityArr = [
+            {
+                name: 'ToggleAuraTarget',
+                action: '!pa toggleAuraTarget @{character_id} @{target|character_id}'
+            }
+        ];
+        paladinAbilityArr.forEach((a) => {
+            const ability = findObjs({
+                _type: 'ability',
+                _characterid: pID,
+                name: a.name
+            })[0];
+            if (ability != undefined) {
+                if (ability.get('action') != a.action) {
+                    ability.setWithWorker('action', a.action);
+                }
+            }
+            else {
+                createObj('ability', {
+                    _characterid: pID,
+                    name: a.name,
+                    action: a.action
+                });
+            }
+        });
     }
     /**
      * Sets or removes a marker on a token based on the bonus it has started
@@ -479,6 +516,17 @@ const PaladinAura = (function () {
             paladinCheck();
         }
         toChat(output, getState('active') == 'true');
+    }
+    function getAttr(id, name) {
+        let attr = findObjs({
+            _type: 'attribute',
+            _characterid: id,
+            name: name
+        });
+        if (attr.length > 0) {
+            return attr[0].get('current');
+        }
+        return 'undefined';
     }
     function getState(value) {
         return state[stateName + value];
