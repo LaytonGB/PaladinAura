@@ -1,13 +1,6 @@
 // TODO
-/*- Respond to this by adding attr to target
-    "PaladinAura_charID-A"
-    current: 
-      if true make false, 
-      if false make true, 
-      if missing 
-        if npc make true, 
-        if player make false
-  - For each paladin if target token has attr do/dont target based on value
+/*- For each paladin if target token has attr do/dont target based on value
+  - Configure bonus for NPCs
 */
 
 const PaladinAura = (function() {
