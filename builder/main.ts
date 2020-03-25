@@ -337,10 +337,18 @@ const PaladinAura = (function() {
     let playerTokens = allTokens.filter((token) => {
       let charID = token.get('represents'),
         char = getObj('character', charID),
-        attr = +getAttr(charID, 'npc');
+        isNPC = +getAttr(charID, 'npc') == 1;
+      // return any token that has a character,
+      // is not NPC or has custom attr, and is on an active page
       return (
         char != undefined &&
-        attr != 1 &&
+        (!isNPC ||
+          (findObjs({
+            _type: 'attribute',
+            _characterid: charID
+          }) as Attribute[]).find((a) => {
+            return a.get('name').includes(stateName);
+          }) != undefined) &&
         getActivePages().includes(token.get('_pageid'))
       );
     });
@@ -410,7 +418,10 @@ const PaladinAura = (function() {
           yDist = Math.abs(token.get('top') - paladin.top),
           distTotal =
             xDist >= yDist ? distCalc(xDist, yDist) : distCalc(yDist, xDist);
-        if (distTotal <= distLimit) {
+        if (
+          distTotal <= distLimit &&
+          getAttr(token.get('represents'), stateName + paladin.id) != 'false'
+        ) {
           saveBonus =
             saveBonus >= paladin.chaBonus ? saveBonus : paladin.chaBonus;
         } else {
@@ -577,7 +588,7 @@ const PaladinAura = (function() {
         current: newValue
       });
     }
-    // TODO integrate true or false in output
+    paladinCheck();
     toChat(
       '**' +
         paladin.get('name') +

@@ -1,13 +1,6 @@
 // TODO
-/*- Respond to this by adding attr to target
-    "PaladinAura_charID-A"
-    current:
-      if true make false,
-      if false make true,
-      if missing
-        if npc make true,
-        if player make false
-  - For each paladin if target token has attr do/dont target based on value
+/*- For each paladin if target token has attr do/dont target based on value
+  - Configure bonus for NPCs
 */
 const PaladinAura = (function () {
     const version = '1.0.5';
@@ -261,9 +254,17 @@ const PaladinAura = (function () {
             _subtype: 'token'
         });
         let playerTokens = allTokens.filter((token) => {
-            let charID = token.get('represents'), char = getObj('character', charID), attr = +getAttr(charID, 'npc');
+            let charID = token.get('represents'), char = getObj('character', charID), isNPC = +getAttr(charID, 'npc') == 1;
+            // return any token that has a character,
+            // is not NPC or has custom attr, and is on an active page
             return (char != undefined &&
-                attr != 1 &&
+                (!isNPC ||
+                    findObjs({
+                        _type: 'attribute',
+                        _characterid: charID
+                    }).find((a) => {
+                        return a.get('name').includes(stateName);
+                    }) != undefined) &&
                 getActivePages().includes(token.get('_pageid')));
         });
         let auraTokens = playerTokens.map((token) => {
@@ -321,7 +322,8 @@ const PaladinAura = (function () {
             let saveBonus, page = getObj('page', token.get('_pageid')), pixelsPerSquare = page.get('snapping_increment') * 70, unitsPerSquare = page.get('scale_number');
             paladinTokens.forEach((paladin) => {
                 let distLimit = (paladin.radius / unitsPerSquare) * pixelsPerSquare, xDist = Math.abs(token.get('left') - paladin.left), yDist = Math.abs(token.get('top') - paladin.top), distTotal = xDist >= yDist ? distCalc(xDist, yDist) : distCalc(yDist, xDist);
-                if (distTotal <= distLimit) {
+                if (distTotal <= distLimit &&
+                    getAttr(token.get('represents'), stateName + paladin.id) != 'false') {
                     saveBonus =
                         saveBonus >= paladin.chaBonus ? saveBonus : paladin.chaBonus;
                 }
@@ -468,7 +470,7 @@ const PaladinAura = (function () {
                 current: newValue
             });
         }
-        // TODO integrate true or false in output
+        paladinCheck();
         toChat('**' +
             paladin.get('name') +
             ' has toggled their aura to "' +
