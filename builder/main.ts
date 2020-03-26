@@ -1,3 +1,16 @@
+// TODO
+/*
+- Add a button to config that calls api
+- Add handle input variables to hear message
+- Create a new function clearAll that does the following:
+  - Get all PaladinBuff attrs
+    - If they are not 0, check if npc or pc
+    - Un-apply aura bonus as appropriate
+    - Delete PaladinBuff attrs
+  - Delete all PaladinSpecific attrs
+  - Delete all PaladinAbilities
+*/
+
 const PaladinAura = (function() {
   const version = '1.0.7';
 
@@ -222,6 +235,7 @@ const PaladinAura = (function() {
           : s.customConfig;
       output += `{{${s.name}=[${currentValue}](${apiCall} config ${s.name} ?{New ${s.name} value${stringVals}})}}`;
     });
+    output += `{{Clear All=[CLEAR](!&#13;?{Are you sure? All custom paladin targets will be lost|Cancel,|I am sure,${apiCall} RESET})}}`;
     toChat(output, undefined, playerName);
 
     /**
