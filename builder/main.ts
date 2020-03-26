@@ -1,7 +1,6 @@
 // TODO
-/*- For each paladin if target token has attr do/dont target based on value
-  - Configure bonus for NPCs
-*/
+/*- Configure bonus for NPCs
+ */
 
 const PaladinAura = (function() {
   const version = '1.0.5';
@@ -330,14 +329,14 @@ const PaladinAura = (function() {
     if (getState('active') == 'false') {
       return;
     } // stops here if the API is inactive
-    let allTokens = findObjs({
+    const allTokens = findObjs({
       _type: 'graphic',
       _subtype: 'token'
     }) as Graphic[];
-    let playerTokens = allTokens.filter((token) => {
-      let charID = token.get('represents'),
-        char = getObj('character', charID),
-        isNPC = +getAttr(charID, 'npc') == 1;
+    const playerTokens = allTokens.filter((token) => {
+      const charID = token.get('represents');
+      const char = getObj('character', charID);
+      const isNPC = +getAttr(charID, 'npc') == 1;
       // return any token that has a character,
       // is not NPC or has custom attr, and is on an active page
       return (
@@ -352,9 +351,9 @@ const PaladinAura = (function() {
         getActivePages().includes(token.get('_pageid'))
       );
     });
-    let auraTokens = playerTokens.map((token) => {
-      let charID = token.get('represents'),
-        output: PaladinObject;
+    const auraTokens = playerTokens.map((token) => {
+      const charID = token.get('represents');
+      let output: PaladinObject;
       if (
         getAttr(charID, 'class')
           .toLowerCase()
@@ -389,7 +388,7 @@ const PaladinAura = (function() {
        * @param levelAttr The attribute of the character object that represents their paladin level.
        */
       function setOutput(levelAttr: string): PaladinObject {
-        let output = {
+        const output = {
           chaBonus: Math.max(+getAttr(charID, 'charisma_mod'), 1),
           id: charID,
           left: +token.get('left'),
@@ -401,23 +400,23 @@ const PaladinAura = (function() {
         return output;
       }
     });
-    let paladinTokens = auraTokens.filter((obj: any) => {
+    const paladinTokens = auraTokens.filter((obj: any) => {
       return obj.token !== undefined;
     }) as PaladinObject[];
     paladinTokens.forEach((p) => {
       paladinAbilities(p.id);
     });
     playerTokens.forEach((token) => {
-      let saveBonus: number,
-        page = getObj('page', token.get('_pageid')),
-        pixelsPerSquare = page.get('snapping_increment') * 70,
-        unitsPerSquare = page.get('scale_number');
+      let saveBonus: number;
+      const page = getObj('page', token.get('_pageid'));
+      const pixelsPerSquare = page.get('snapping_increment') * 70;
+      const unitsPerSquare = page.get('scale_number');
       paladinTokens.forEach((paladin) => {
-        let distLimit = (paladin.radius / unitsPerSquare) * pixelsPerSquare,
-          xDist = Math.abs(token.get('left') - paladin.left),
-          yDist = Math.abs(token.get('top') - paladin.top),
-          distTotal =
-            xDist >= yDist ? distCalc(xDist, yDist) : distCalc(yDist, xDist);
+        const distLimit = (paladin.radius / unitsPerSquare) * pixelsPerSquare;
+        const xDist = Math.abs(token.get('left') - paladin.left);
+        const yDist = Math.abs(token.get('top') - paladin.top);
+        const distTotal =
+          xDist >= yDist ? distCalc(xDist, yDist) : distCalc(yDist, xDist);
         if (
           distTotal <= distLimit &&
           getAttr(token.get('represents'), stateName + paladin.id) != 'false'
@@ -429,7 +428,7 @@ const PaladinAura = (function() {
         }
 
         function distCalc(distA: number, distB: number) {
-          let diagonal =
+          const diagonal =
             getState('diagonal_calc_override') == 'none'
               ? page.get('diagonaltype')
               : getState('diagonal_calc_override');
@@ -468,8 +467,8 @@ const PaladinAura = (function() {
    */
   function setBuff(token: Graphic, value: number) {
     setMarker(token, value);
-    let charID = token.get('represents'),
-      char = getObj('character', charID);
+    const charID = token.get('represents');
+    const char = getObj('character', charID);
     if (!char) {
       error(
         `Player Character '${token.get('name')}' had no character sheet.`,
@@ -489,35 +488,115 @@ const PaladinAura = (function() {
           current: '0'
         });
       }
-      let attrValue = attr.get('current');
+      const attrValue = attr.get('current');
       if (+value != +attrValue) {
-        let adjust = +value - +attrValue;
+        const adjust = +value - +attrValue;
         attr.setWithWorker('current', value.toString());
-        modAttr(token, 'globalsavemod', adjust);
+        if (+getAttr(charID, 'npc') != 1) {
+          modAttr(token, 'globalsavemod', adjust);
+        } else {
+          [
+            'strength',
+            'dexterity',
+            'constitution',
+            'intelligence',
+            'wisdom',
+            'charisma'
+          ].forEach((abilityName) => {
+            modAttr(token, abilityName, adjust, true);
+          });
+        }
       }
     }
-    return;
   }
 
-  function modAttr(token: Graphic, attrName: string, value: number) {
-    let charID = token.get('represents'),
-      attr = findObjs({
+  function modAttr(
+    token: Graphic,
+    attrName: string,
+    value: number,
+    isNPC?: boolean
+  ) {
+    const charID = token.get('represents');
+    if (isNPC) {
+      const shortAttrName = attrName.slice(0, 3);
+      let attrMod = findObjs({
+        _type: 'attribute',
+        _characterid: charID,
+        name: attrName + '_mod'
+      })[0] as Attribute;
+      const showNPCsaves = findObjs({
+        _type: 'attribute',
+        _characterid: charID,
+        name: 'npc_saving_flag'
+      })[0] as Attribute;
+      const NPCattrs = (findObjs({
+        _type: 'attribute',
+        _characterid: charID
+      }) as Attribute[]).filter((a) => {
+        return a.get('name').includes('npc_' + shortAttrName + '_');
+      });
+      let saveFlagAttr = NPCattrs.find((a) => {
+        return a.get('name') == 'npc_' + shortAttrName + '_save_flag';
+      });
+      let saveBonusAttr = NPCattrs.find((a) => {
+        return a.get('name') == 'npc_' + shortAttrName + '_save';
+      });
+
+      if (attrMod == undefined) {
+        attrMod = createAttr(attrName);
+      }
+      if (saveFlagAttr == undefined) {
+        saveFlagAttr = createAttr('npc_' + shortAttrName + '_save_flag');
+      }
+      if (saveBonusAttr == undefined) {
+        saveBonusAttr = createAttr('npc_' + shortAttrName + '_save');
+      }
+
+      if (showNPCsaves == undefined) {
+        createAttr('npc_saving_flag', '2');
+      } else {
+        showNPCsaves.setWithWorker('current', '2');
+      }
+
+      if (+saveFlagAttr.get('current') == 2) {
+        const adjust = +saveBonusAttr.get('current') + value;
+        saveBonusAttr.setWithWorker('current', adjust.toString());
+      } else {
+        const adjust = +attrMod.get('current') + value;
+        saveBonusAttr.setWithWorker('current', adjust.toString());
+      }
+
+      if (+saveBonusAttr.get('current') == +attrMod.get('current')) {
+        saveFlagAttr.setWithWorker('current', '0');
+      } else {
+        saveFlagAttr.setWithWorker('current', '2');
+      }
+    } else {
+      let attr = findObjs({
         _type: 'attribute',
         _characterid: charID,
         name: attrName
       })[0] as Attribute;
-    if (!attr) {
-      attr = createObj('attribute', {
+      if (!attr) {
+        attr = createObj('attribute', {
+          _characterid: charID,
+          name: attrName
+        });
+        attr.setWithWorker('current', value.toString());
+      } else {
+        const attrValue = attr.get('current');
+        const adjust = +attrValue + +value;
+        attr.setWithWorker('current', adjust.toString());
+      }
+    }
+
+    function createAttr(name: string, value?: string): Attribute {
+      const output = createObj('attribute', {
         _characterid: charID,
-        name: attrName
+        name: name
       });
-      attr.setWithWorker('current', value.toString());
-      return;
-    } else {
-      let attrValue = attr.get('current'),
-        adjust = +attrValue + +value;
-      attr.setWithWorker('current', adjust.toString());
-      return;
+      output.setWithWorker('current', value || '0');
+      return output;
     }
   }
 
@@ -564,14 +643,14 @@ const PaladinAura = (function() {
   }
 
   function toggleAuraTarget(pID: string, tID: string): void {
-    let paladin = getObj('character', pID),
-      target = getObj('character', tID);
+    const paladin = getObj('character', pID);
+    const target = getObj('character', tID);
     if (paladin == undefined || target == undefined) {
       error('A target was undefined.', 21);
       return;
     }
     let newValue: string;
-    let attr = findObjs({
+    const attr = findObjs({
       _type: 'attribute',
       _characterid: tID,
       name: stateName + pID
@@ -580,7 +659,7 @@ const PaladinAura = (function() {
       newValue = attr.get('current') == 'true' ? 'false' : 'true';
       attr.set('current', newValue);
     } else {
-      let targetIsNPC = +getAttr(tID, 'npc') == 1 ? true : false;
+      const targetIsNPC = +getAttr(tID, 'npc') == 1 ? true : false;
       newValue = targetIsNPC ? 'true' : 'false';
       createObj('attribute', {
         _characterid: tID,
@@ -692,7 +771,7 @@ const PaladinAura = (function() {
   }
 
   function getAttr(id: string, name: string): string {
-    let attr = findObjs({
+    const attr = findObjs({
       _type: 'attribute',
       _characterid: id,
       name: name
