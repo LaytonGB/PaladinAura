@@ -1,6 +1,5 @@
 // TODO
 /*
-- Add a button to config that calls api
 - Add handle input variables to hear message
 - Create a new function clearAll that does the following:
   - Get all PaladinBuff attrs
@@ -300,7 +299,7 @@ const PaladinAura = (function() {
       playerName = msg.who.split(' ', 1)[0];
       playerID = msg.playerid;
       if (
-        [undefined, 'config', 'help', 'toggleAuraTarget'].includes(parts[1])
+        [undefined, 'config', 'help', 'toggleAuraTarget', 'RESET'].includes(parts[1])
       ) {
         if (parts[1] == 'help') {
           showHelp();
@@ -315,6 +314,8 @@ const PaladinAura = (function() {
             } else {
               showConfig();
             }
+          } else if (parts[2] == 'RESET') {
+            clearAll();
           }
         } else {
           error('Command is only accessible to GMs.', 1);
