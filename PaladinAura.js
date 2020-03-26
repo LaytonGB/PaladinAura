@@ -1,8 +1,5 @@
-// TODO
-/*- Configure bonus for NPCs
- */
 const PaladinAura = (function () {
-    const version = '1.0.5';
+    const version = '1.0.6';
     function isActiveValue(val) {
         return ['true', 'false'].includes(val);
     }
@@ -405,6 +402,36 @@ const PaladinAura = (function () {
                     ].forEach((abilityName) => {
                         modAttr(token, abilityName, adjust, true);
                     });
+                    let showNPCsaves = findObjs({
+                        _type: 'attribute',
+                        _characterid: charID,
+                        name: 'npc_saving_flag'
+                    })[0];
+                    if (showNPCsaves == undefined) {
+                        showNPCsaves = createObj('attribute', {
+                            _characterid: token.get('represents'),
+                            name: 'npc_saving_flag'
+                        });
+                    }
+                    if (findObjs({
+                        _type: 'attribute',
+                        _characterid: token.get('represents')
+                    }).some((a) => {
+                        const targetAttrs = [
+                            'npc_' + 'str' + '_save',
+                            'npc_' + 'dex' + '_save',
+                            'npc_' + 'con' + '_save',
+                            'npc_' + 'int' + '_save',
+                            'npc_' + 'wis' + '_save',
+                            'npc_' + 'cha' + '_save'
+                        ];
+                        return (targetAttrs.includes(a.get('name')) && +a.get('current') != 0);
+                    })) {
+                        showNPCsaves.setWithWorker('current', '2');
+                    }
+                    else {
+                        showNPCsaves.setWithWorker('current', '0');
+                    }
                 }
             }
         }
@@ -417,11 +444,6 @@ const PaladinAura = (function () {
                 _type: 'attribute',
                 _characterid: charID,
                 name: attrName + '_mod'
-            })[0];
-            const showNPCsaves = findObjs({
-                _type: 'attribute',
-                _characterid: charID,
-                name: 'npc_saving_flag'
             })[0];
             const NPCattrs = findObjs({
                 _type: 'attribute',
@@ -443,12 +465,6 @@ const PaladinAura = (function () {
             }
             if (saveBonusAttr == undefined) {
                 saveBonusAttr = createAttr('npc_' + shortAttrName + '_save');
-            }
-            if (showNPCsaves == undefined) {
-                createAttr('npc_saving_flag', '2');
-            }
-            else {
-                showNPCsaves.setWithWorker('current', '2');
             }
             if (+saveFlagAttr.get('current') == 2) {
                 const adjust = +saveBonusAttr.get('current') + value;
