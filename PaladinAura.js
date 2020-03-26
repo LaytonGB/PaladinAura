@@ -1,6 +1,3 @@
-// TODO
-/*- Configure bonus for NPCs
- */
 const PaladinAura = (function () {
     const version = '1.0.5';
     function isActiveValue(val) {
