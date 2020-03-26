@@ -1,6 +1,6 @@
 # PaladinAura
 
-**VERSION:** 1.0.5
+**VERSION:** 1.0.6
 
 A roll20 API for 5E D&D that automatically adjusts the saving throw bonuses of Paladins and those close to them.
 
@@ -28,6 +28,10 @@ Once there do the following:
 ## How to Use
 
 The API should be ready to go immediately. However, if you wish to customize the system, or even turn it off, you can do so from the in-game commands (see [Configuration](#Settings--Configuration) below).
+
+### Paladin Aura Toggle
+
+Each detected paladin will gain an ability to toggle whether others are affected by their aura. This applies to both NPCs and Characters. The button that activates this ability will be at the top left of the Roll20 interface whenever a paladin token is selected.
 
 ### First time load
 
@@ -60,6 +64,9 @@ There are only two settings that can be configured (currently).
 [Submit an issue report or feature request.](https://github.com/LaytonGB/PaladinAura/issues/new/choose)
 
 ## Changelog
+
+1.0.6
+- Paladins now have a Token Ability (ToggleAuraTarget) that allows them to toggle whether NPCs and Players recieve a buff to saving throws from their Paladin Aura.
 
 1.0.5
 - API now runs on any page with active player(s)
