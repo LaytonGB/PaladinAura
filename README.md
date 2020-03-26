@@ -66,7 +66,7 @@ There are only two settings that can be configured (currently).
 ## Changelog
 
 1.0.6
-- Paladins now have a Token Ability (ToggleAuraTarget) that allows them to toggle whether NPCs and Players recieve a buff to saving throws from their Paladin Aura.
+- Paladins now have a Token Ability (ToggleAuraTarget) that allows them to toggle whether NPCs and Players receive a buff to saving throws from their Paladin Aura.
 
 1.0.5
 - API now runs on any page with active player(s)
@@ -81,4 +81,4 @@ There are only two settings that can be configured (currently).
 - Added a bottom limit to the Aura's bonus (+1)
 
 1.0.1
-- Added token-status marker integration. When the PaladinAura affects a token that token now recieves a marker with a number to represent the bonus.
+- Added token-status marker integration. When the PaladinAura affects a token that token now receives a marker with a number to represent the bonus.
