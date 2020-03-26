@@ -1,7 +1,3 @@
-// TODO
-/*- Configure bonus for NPCs
- */
-
 const PaladinAura = (function() {
   const version = '1.0.5';
 
@@ -554,7 +550,7 @@ const PaladinAura = (function() {
 
       if (showNPCsaves == undefined) {
         createAttr('npc_saving_flag', '2');
-      } else {
+      } else if (+showNPCsaves.get('current') != 2) {
         showNPCsaves.setWithWorker('current', '2');
       }
 
