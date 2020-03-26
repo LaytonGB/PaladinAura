@@ -4,8 +4,6 @@ const PaladinAura = (function () {
 =======
 // TODO
 /*
-- Add a button to config that calls api
-- Add handle input variables to hear message
 - Create a new function clearAll that does the following:
   - Get all PaladinBuff attrs
     - If they are not 0, check if npc or pc
@@ -13,6 +11,7 @@ const PaladinAura = (function () {
     - Delete PaladinBuff attrs
   - Delete all PaladinSpecific attrs
   - Delete all PaladinAbilities
+  - Delete all stateVars
 */
 const PaladinAura = (function () {
     const version = '1.0.6';
@@ -166,7 +165,7 @@ const PaladinAura = (function () {
                 : s.customConfig;
             output += `{{${s.name}=[${currentValue}](${apiCall} config ${s.name} ?{New ${s.name} value${stringVals}})}}`;
         });
-        output += `{{Clear All=[CLEAR](!&#13;?{Are you sure? All custom paladin targets will be lost.|Cancel,|I am sure,${apiCall} RESET})}}`;
+        output += `{{Clear All=[CLEAR](!&#13;?{Are you sure? All custom paladin targets will be lost|Cancel,|I am sure,${apiCall} RESET})}}`;
         toChat(output, undefined, playerName);
         /**
          * Moves the default value to the start of the array and presents
@@ -207,6 +206,9 @@ const PaladinAura = (function () {
         paladinCheck();
     }
     function cleanMarkers(oldMarker) {
+        if (oldMarker == undefined) {
+            oldMarker = getState('status_marker');
+        }
         findObjs({
             _type: 'graphic'
         })
@@ -222,7 +224,7 @@ const PaladinAura = (function () {
         if (msg.type == 'api' && parts[0] == apiCall) {
             playerName = msg.who.split(' ', 1)[0];
             playerID = msg.playerid;
-            if ([undefined, 'config', 'help', 'toggleAuraTarget'].includes(parts[1])) {
+            if ([undefined, 'config', 'help', 'toggleAuraTarget', 'RESET'].includes(parts[1])) {
                 if (parts[1] == 'help') {
                     showHelp();
                 }
@@ -240,6 +242,9 @@ const PaladinAura = (function () {
                         else {
                             showConfig();
                         }
+                    }
+                    else if (parts[2] == 'RESET') {
+                        clearAll();
                     }
                 }
                 else {
@@ -405,7 +410,7 @@ const PaladinAura = (function () {
                 const adjust = +value - +attrValue;
                 attr.setWithWorker('current', value.toString());
                 if (+getAttr(charID, 'npc') != 1) {
-                    modAttr(token, 'globalsavemod', adjust);
+                    modAttr(token.get('represents'), 'globalsavemod', adjust);
                 }
                 else {
                     [
@@ -416,14 +421,19 @@ const PaladinAura = (function () {
                         'wisdom',
                         'charisma'
                     ].forEach((abilityName) => {
-                        modAttr(token, abilityName, adjust, true);
+                        modAttr(token.get('represents'), abilityName, adjust, true);
                     });
                 }
             }
         }
     }
-    function modAttr(token, attrName, value, isNPC) {
-        const charID = token.get('represents');
+    /**
+     * @param charID Target character ID.
+     * @param attrName Target attribute (eg. globalsavemod).
+     * @param value The difference between the old PaladinBuff and the new one.
+     * @param isNPC Token character is an NPC.
+     */
+    function modAttr(charID, attrName, value, isNPC) {
         if (isNPC) {
             const shortAttrName = attrName.slice(0, 3);
             let attrMod = findObjs({
@@ -659,6 +669,39 @@ const PaladinAura = (function () {
             paladinCheck();
         }
         toChat(output, getState('active') == 'true');
+    }
+    function clearAll() {
+        const buffAttrs = findObjs({
+            _type: 'attribute',
+            name: 'paladin_buff'
+        });
+        buffAttrs.forEach((attr) => {
+            if (+attr.get('current') == 0) {
+                attr.remove();
+            }
+            else if (attr.get('current') != undefined) {
+                const char = getObj('character', attr.get('_characterid'));
+                const isNPC = +getAttr(char.id, 'npc') == 1;
+                const buffVal = +attr.get('current');
+                if (isNPC) {
+                    [
+                        'strength',
+                        'dexterity',
+                        'constitution',
+                        'intelligence',
+                        'wisdom',
+                        'charisma'
+                    ].forEach((abilityName) => {
+                        modAttr(char.id, abilityName, -buffVal, true);
+                    });
+                }
+                else {
+                    modAttr(char.id, 'globalsavemod', -buffVal);
+                }
+                attr.remove();
+            }
+        });
+        cleanMarkers();
     }
     function getAttr(id, name) {
         const attr = findObjs({
