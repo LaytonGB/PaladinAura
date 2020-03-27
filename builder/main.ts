@@ -827,31 +827,14 @@ const PaladinAura = (function() {
       name: 'paladin_buff'
     }) as Attribute[];
     buffAttrs.forEach((attr) => {
-      if (+attr.get('current') == 0) {
-        attr.remove();
-      } else if (attr.get('current') != undefined) {
-        const char = getObj('character', attr.get('_characterid'));
-        const isNPC = +getAttr(char.id, 'npc') == 1;
-        const buffVal = +attr.get('current');
-        if (isNPC) {
-          [
-            'strength',
-            'dexterity',
-            'constitution',
-            'intelligence',
-            'wisdom',
-            'charisma'
-          ].forEach((abilityName) => {
-            modAttr(char.id, abilityName, -buffVal, true);
-          });
-          checkNPCsaveSection(char.id);
-        } else {
-          modAttr(char.id, 'globalsavemod', -buffVal);
-        }
-        attr.remove();
+      if (+attr.get('current') != 0 && attr.get('current') != undefined) {
+        const token = findObjs({
+          represents: attr.get('_characterid')
+        })[0] as Graphic;
+        setBuff(token, 0);
       }
+      attr.remove();
     });
-    cleanMarkers();
     toChat('**All PaladinAura attributes cleared.**', true);
   }
 
