@@ -276,15 +276,17 @@ const PaladinAura = (function() {
     if (oldMarker == undefined) {
       oldMarker = getState('status_marker');
     }
-    findObjs({
-      _type: 'graphic'
-    })
-      .filter((g: Graphic) => {
-        return g.get(oldMarker as any) != 'false';
+    if (oldMarker != undefined) {
+      findObjs({
+        _type: 'graphic'
       })
-      .forEach((g: Graphic) => {
-        g.set(oldMarker as any, 'false');
-      });
+        .filter((g: Graphic) => {
+          return g.get(oldMarker as any) != 'false';
+        })
+        .forEach((g: Graphic) => {
+          g.set(oldMarker as any, 'false');
+        });
+    }
   }
 
   function handleInput(msg: ApiChatEventData) {

@@ -196,15 +196,17 @@ const PaladinAura = (function () {
         if (oldMarker == undefined) {
             oldMarker = getState('status_marker');
         }
-        findObjs({
-            _type: 'graphic'
-        })
-            .filter((g) => {
-            return g.get(oldMarker) != 'false';
-        })
-            .forEach((g) => {
-            g.set(oldMarker, 'false');
-        });
+        if (oldMarker != undefined) {
+            findObjs({
+                _type: 'graphic'
+            })
+                .filter((g) => {
+                return g.get(oldMarker) != 'false';
+            })
+                .forEach((g) => {
+                g.set(oldMarker, 'false');
+            });
+        }
     }
     function handleInput(msg) {
         parts = msg.content.split(' ');
