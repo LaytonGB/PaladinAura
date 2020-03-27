@@ -9,10 +9,6 @@ const PaladinAura = (function () {
 // TODO
 /*
 - Create a new function clearAll that does the following:
-  - Get all PaladinBuff attrs
-    - If they are not 0, check if npc or pc
-    - Un-apply aura bonus as appropriate
-    - Delete PaladinBuff attrs
   - Delete all PaladinSpecific attrs
   - Delete all PaladinAbilities
   - Delete all stateVars
@@ -179,7 +175,7 @@ const PaladinAura = (function () {
                 : s.customConfig;
             output += `{{${s.name}=[${currentValue}](${apiCall} config ${s.name} ?{New ${s.name} value${stringVals}})}}`;
         });
-        output += `{{Clear All=[CLEAR](!&#13;?{Are you sure? All custom paladin targets will be lost|Cancel,|I am sure,${apiCall} RESET})}}`;
+        output += `{{**CAUTION**=[CLEAR ALL](!&#13;?{Are you sure? All custom paladin targets will be lost|Cancel,|I am sure,${apiCall} RESET})}}`;
         toChat(output, undefined, playerName);
         /**
          * Moves the default value to the start of the array and presents
@@ -722,7 +718,6 @@ const PaladinAura = (function () {
         toChat(output, getState('active') == 'true');
     }
     function clearAll() {
-        toChat('Clear all reached.', true);
         const buffAttrs = findObjs({
             _type: 'attribute',
             name: 'paladin_buff'
@@ -735,6 +730,16 @@ const PaladinAura = (function () {
                 setBuff(token, 0);
             }
             attr.remove();
+        });
+        // Find and remove all paladin aura inclusion / exclusion attrs
+        findObjs({
+            _type: 'attribute'
+        })
+            .filter((a) => {
+            return a.get('name').includes('PaladinAura_');
+        })
+            .forEach((a) => {
+            a.remove();
         });
         toChat('**All PaladinAura attributes cleared.**', true);
     }
