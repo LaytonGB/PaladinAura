@@ -324,9 +324,15 @@ const PaladinAura = (function () {
         const paladinObjects = auraTokens.filter((obj) => {
             return obj.token !== undefined;
         });
+        let abilitiesChanged = false;
         paladinObjects.forEach((p) => {
-            paladinAbilities(p.id);
+            if (paladinAbilities(p.id)) {
+                abilitiesChanged = true;
+            }
         });
+        if (abilitiesChanged) {
+            toChat('Some paladin abilities were wrong. They have been fixed.', true);
+        }
         playerTokens.forEach((t) => {
             let saveBonus;
             const page = getObj('page', t.get('_pageid'));
@@ -566,9 +572,7 @@ const PaladinAura = (function () {
                 });
             }
         });
-        if (configChanged) {
-            toChat('Some Paladin abilities were wrong. They have been fixed.', true);
-        }
+        return configChanged;
     }
     function toggleAuraTarget(pID, tID) {
         const paladin = getObj('character', pID);
