@@ -104,9 +104,13 @@ const PaladinAura = (function() {
       }) as Player[])
         .filter((p) => playerIsGM(p.id))
         .map((p) => p.get('_lastpage'))
-        .filter(
-          (p) => getObj('page', p).get('scale_units') == 'ft' // excludes pages not measured in feet
-        ) as string[])
+        // excludes pages not measured in feet
+        .filter((p) => {
+          if (getObj('page', p) != undefined) {
+            return getObj('page', p).get('scale_units') == 'ft';
+          }
+          return true;
+        }) as string[])
     ])
   ];
 
