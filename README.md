@@ -65,6 +65,9 @@ There are only two settings that can be configured (currently).
 
 ## Changelog
 
+1.0.7
+- Fixed status marker config error for clean installs.
+
 1.0.6
 - Paladins now have a Token Ability (ToggleAuraTarget) that allows them to toggle whether NPCs and Players receive a buff to saving throws from their Paladin Aura.
 
