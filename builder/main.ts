@@ -840,7 +840,14 @@ const PaladinAura = (function() {
       .forEach((a) => {
         a.remove();
       });
-    toChat('**All PaladinAura attributes cleared.**', true);
+    // Find and remove all paladin abilities
+    (findObjs({
+      _type: 'ability',
+      name: 'ToggleAuraTarget'
+    }) as Ability[]).forEach((a) => {
+      a.remove();
+    });
+    toChat('**All PaladinAura attributes and abilities cleared.**', true);
   }
 
   function getAttr(id: string, name: string): string {
