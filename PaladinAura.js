@@ -1,31 +1,5 @@
-<<<<<<< master
-<<<<<<< master
-<<<<<<< master
-<<<<<<< master
 const PaladinAura = (function () {
-    const version = '1.0.7';
-=======
-=======
->>>>>>> Functional for NPCs - pre-rework
-// TODO
-/*
-- Create a new function clearAll that does the following:
-  - Delete all PaladinSpecific attrs
-  - Delete all PaladinAbilities
-  - Delete all stateVars
-*/
-<<<<<<< master
-const PaladinAura = (function () {
-    const version = '1.0.6';
->>>>>>> Config menu button added
-=======
-=======
->>>>>>> Functional for NPCs - pre-rework
-=======
->>>>>>> Fully functional and finished. Ready for merge.
-const PaladinAura = (function () {
-    const version = '1.0.6';
->>>>>>> Needs testing
+    const version = '1.0.8';
     function isActiveValue(val) {
         return ['true', 'false'].includes(val);
     }
@@ -476,15 +450,6 @@ const PaladinAura = (function () {
             if (saveBonusAttr == undefined) {
                 saveBonusAttr = createAttr('npc_' + shortAttrName + '_save');
             }
-<<<<<<< master
-            if (showNPCsaves == undefined) {
-                createAttr('npc_saving_flag', '2');
-            }
-            else if (+showNPCsaves.get('current') != 2) {
-                showNPCsaves.setWithWorker('current', '2');
-            }
-=======
->>>>>>> Needs testing
             if (+saveFlagAttr.get('current') == 2) {
                 const adjust = +saveBonusAttr.get('current') + value;
                 saveBonusAttr.setWithWorker('current', adjust.toString());
