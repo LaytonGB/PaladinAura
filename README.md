@@ -73,7 +73,7 @@ There are only two settings that can be configured (currently).
 - Improved first-time-run message.
 
 1.0.8
-- In the config there is now a CLEAR ALL button that allows a GM to clear all settings, attributes, and abilities in the game.
+- In the config there is now a CLEAR ALL button that allows a GM to clear all PaladinAura settings, attributes, and abilities in the game.
 - NPC saving throw regions no longer show on their sheet when all save bonuses are equal to their relevant attribute modifiers.
 
 1.0.7
