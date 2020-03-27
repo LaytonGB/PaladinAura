@@ -1,5 +1,5 @@
 const PaladinAura = (function() {
-  const version = '1.0.9';
+  const version = '1.0.10';
 
   type StateVar = 'active' | 'diagonal_calc_override' | 'status_marker';
   type ActiveValues = 'true' | 'false';
