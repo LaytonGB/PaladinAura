@@ -1,5 +1,5 @@
 const PaladinAura = (function () {
-    const version = '1.0.8';
+    const version = '1.0.9';
     function isActiveValue(val) {
         return ['true', 'false'].includes(val);
     }
@@ -790,21 +790,32 @@ const PaladinAura = (function () {
         log(nameLog + error + ` Error code ${code}.`);
     }
     function startupChecks() {
+        let changedStates = 0, lastState, lastOldValue, lastNewValue;
         states.forEach((s) => {
             const acceptables = s.acceptables ? s.acceptables : ['true', 'false'];
             const defaultVal = s.default ? s.default : 'true';
             if (getState(s.name) == undefined ||
                 (!acceptables.includes(getState(s.name)) && s.ignore != 'true')) {
-                error('"' +
-                    s.name +
-                    '" value was "' +
-                    getState(s.name) +
-                    '" but has now been set to its default value, "' +
-                    defaultVal +
-                    '".', -1);
+                changedStates++;
+                lastState = s.name;
+                lastOldValue = getState(s.name);
+                lastNewValue = defaultVal;
                 setState(s.name, defaultVal);
             }
         });
+        if (changedStates == 1) {
+            error('"' +
+                lastState +
+                '" value was "' +
+                lastOldValue +
+                '" but has now been set to its default value, "' +
+                lastNewValue +
+                '".', -1);
+        }
+        else if (changedStates > 1) {
+            toChat('**Multiple settings were wrong or un-set. They have now been corrected. ' +
+                'If this is your first time running the PaladinAura API, this is normal.**', true);
+        }
     }
     function registerEventHandlers() {
         on('chat:message', handleInput);

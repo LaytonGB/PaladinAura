@@ -1,6 +1,6 @@
 {
   "name": "paladinaura",
-  "version": "1.0.8",
+  "version": "1.0.9",
   "description": "A Roll20 API for 5th Edition D&amp;D to quickly apply and remove the bonuses awarded to those around Paladins of 6th level or above.",
   "main": "main.ts",
   "scripts": {

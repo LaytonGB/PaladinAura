@@ -1,6 +1,6 @@
 # PaladinAura
 
-**VERSION:** 1.0.6
+**VERSION:** 1.0.9
 
 A roll20 API for 5E D&D that automatically adjusts the saving throw bonuses of Paladins and those close to them.
 
@@ -64,6 +64,9 @@ There are only two settings that can be configured (currently).
 [Submit an issue report or feature request.](https://github.com/LaytonGB/PaladinAura/issues/new/choose)
 
 ## Changelog
+
+1.0.9
+- Improved first-time-run message.
 
 1.0.8
 - In the config there is now a CLEAR ALL button that allows a GM to clear all settings, attributes, and abilities in the game.
