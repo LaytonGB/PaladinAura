@@ -7,9 +7,7 @@ const PaladinAura = (function () {
         return ['none', 'foure', 'threefive', 'pythagorean', 'manhattan'].includes(val);
     }
     function isStatusMarkerValue(val) {
-        const markerObjs = JSON.parse(Campaign().get('_token_markers') || '[]');
-        const tokenMarkerTags = markerObjs.map((m) => m.tag);
-        return tokenMarkerTags.includes(val);
+        return val.slice(0, 6) == 'status';
     }
     const stateName = 'PaladinAura_';
     const states = [
