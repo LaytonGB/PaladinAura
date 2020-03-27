@@ -321,26 +321,30 @@ const PaladinAura = (function () {
                 return output;
             }
         });
-        const paladinTokens = auraTokens.filter((obj) => {
+        const paladinObjects = auraTokens.filter((obj) => {
             return obj.token !== undefined;
         });
-        paladinTokens.forEach((p) => {
+        paladinObjects.forEach((p) => {
             paladinAbilities(p.id);
         });
-        playerTokens.forEach((token) => {
+        playerTokens.forEach((t) => {
             let saveBonus;
-            const page = getObj('page', token.get('_pageid'));
+            const page = getObj('page', t.get('_pageid'));
             const pixelsPerSquare = page.get('snapping_increment') * 70;
             const unitsPerSquare = page.get('scale_number');
-            paladinTokens.forEach((paladin) => {
-                const distLimit = (paladin.radius / unitsPerSquare) * pixelsPerSquare;
-                const xDist = Math.abs(token.get('left') - paladin.left);
-                const yDist = Math.abs(token.get('top') - paladin.top);
+            paladinObjects.forEach((p) => {
+                if (t.get('represents') == p.id &&
+                    getAttr(p.id, 'mancer_confirm').trim() == 'on' &&
+                    p.chaBonus == +getAttr(p.id, 'globalsavemod')) {
+                    setAttr(p.id, 'paladin_buff', p.chaBonus.toString());
+                }
+                const distLimit = (p.radius / unitsPerSquare) * pixelsPerSquare;
+                const xDist = Math.abs(t.get('left') - p.left);
+                const yDist = Math.abs(t.get('top') - p.top);
                 const distTotal = xDist >= yDist ? distCalc(xDist, yDist) : distCalc(yDist, xDist);
                 if (distTotal <= distLimit &&
-                    getAttr(token.get('represents'), stateName + paladin.id) != 'false') {
-                    saveBonus =
-                        saveBonus >= paladin.chaBonus ? saveBonus : paladin.chaBonus;
+                    getAttr(t.get('represents'), stateName + p.id) != 'false') {
+                    saveBonus = saveBonus >= p.chaBonus ? saveBonus : p.chaBonus;
                 }
                 else {
                     saveBonus = saveBonus ? saveBonus : 0;
@@ -365,7 +369,7 @@ const PaladinAura = (function () {
                 }
             });
             saveBonus = saveBonus ? saveBonus : 0;
-            setBuff(token, saveBonus);
+            setBuff(t, saveBonus);
         });
     }
     /**
@@ -706,7 +710,7 @@ const PaladinAura = (function () {
             _type: 'attribute'
         })
             .filter((a) => {
-            return a.get('name').includes('PaladinAura_');
+            return a.get('name').includes(stateName);
         })
             .forEach((a) => {
             a.remove();
@@ -724,16 +728,31 @@ const PaladinAura = (function () {
         });
         toChat('**All PaladinAura attributes, abilities, and settings cleared.**', true);
     }
-    function getAttr(id, name) {
+    function getAttr(charID, name) {
         const attr = findObjs({
             _type: 'attribute',
-            _characterid: id,
+            _characterid: charID,
             name: name
         });
         if (attr.length > 0) {
             return attr[0].get('current');
         }
         return 'undefined';
+    }
+    function setAttr(charID, name, value) {
+        let attr = findObjs({
+            _type: 'attribute',
+            _characterid: charID,
+            name: name
+        })[0];
+        if (attr == undefined) {
+            attr = createObj('attribute', {
+                _characterid: charID,
+                name: name
+            });
+        }
+        attr.setWithWorker('current', value);
+        return attr;
     }
     function getState(value) {
         return state[stateName + value];
