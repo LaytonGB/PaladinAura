@@ -436,7 +436,8 @@ const PaladinAura = (function () {
                     if (showNPCsaves == undefined) {
                         showNPCsaves = createObj('attribute', {
                             _characterid: token.get('represents'),
-                            name: 'npc_saving_flag'
+                            name: 'npc_saving_flag',
+                            current: ''
                         });
                     }
                     if (findObjs({
@@ -444,19 +445,19 @@ const PaladinAura = (function () {
                         _characterid: token.get('represents')
                     }).some((a) => {
                         const targetAttrs = [
-                            'npc_' + 'str' + '_save',
-                            'npc_' + 'dex' + '_save',
-                            'npc_' + 'con' + '_save',
-                            'npc_' + 'int' + '_save',
-                            'npc_' + 'wis' + '_save',
-                            'npc_' + 'cha' + '_save'
+                            'npc_' + 'str' + '_save_flag',
+                            'npc_' + 'dex' + '_save_flag',
+                            'npc_' + 'con' + '_save_flag',
+                            'npc_' + 'int' + '_save_flag',
+                            'npc_' + 'wis' + '_save_flag',
+                            'npc_' + 'cha' + '_save_flag'
                         ];
-                        return (targetAttrs.includes(a.get('name')) && +a.get('current') != 0);
+                        return (targetAttrs.includes(a.get('name')) && +a.get('current') != 2);
                     })) {
-                        showNPCsaves.setWithWorker('current', '2');
+                        showNPCsaves.setWithWorker('current', '');
                     }
                     else {
-                        showNPCsaves.setWithWorker('current', '0');
+                        showNPCsaves.setWithWorker('current', '2');
                     }
                 }
             }
