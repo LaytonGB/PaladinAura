@@ -1,8 +1,11 @@
 <<<<<<< master
 <<<<<<< master
+<<<<<<< master
 const PaladinAura = (function () {
     const version = '1.0.7';
 =======
+=======
+>>>>>>> Functional for NPCs - pre-rework
 // TODO
 /*
 - Create a new function clearAll that does the following:
@@ -14,10 +17,13 @@ const PaladinAura = (function () {
   - Delete all PaladinAbilities
   - Delete all stateVars
 */
+<<<<<<< master
 const PaladinAura = (function () {
     const version = '1.0.6';
 >>>>>>> Config menu button added
 =======
+=======
+>>>>>>> Functional for NPCs - pre-rework
 const PaladinAura = (function () {
     const version = '1.0.6';
 >>>>>>> Needs testing
@@ -53,6 +59,9 @@ const PaladinAura = (function () {
     const nameLog = name + ': ';
     const apiCall = '!pa';
     let playerName, playerID, parts;
+    /**
+     * Returns a string array of all currently in-use page IDs.
+     */
     const getActivePages = () => [
         ...new Set([
             Campaign().get('playerpageid'),
@@ -248,7 +257,7 @@ const PaladinAura = (function () {
                             showConfig();
                         }
                     }
-                    else if (parts[2] == 'RESET') {
+                    else if (parts[1] == 'RESET') {
                         clearAll();
                     }
                 }
@@ -428,37 +437,7 @@ const PaladinAura = (function () {
                     ].forEach((abilityName) => {
                         modAttr(token.get('represents'), abilityName, adjust, true);
                     });
-                    let showNPCsaves = findObjs({
-                        _type: 'attribute',
-                        _characterid: charID,
-                        name: 'npc_saving_flag'
-                    })[0];
-                    if (showNPCsaves == undefined) {
-                        showNPCsaves = createObj('attribute', {
-                            _characterid: token.get('represents'),
-                            name: 'npc_saving_flag',
-                            current: ''
-                        });
-                    }
-                    if (findObjs({
-                        _type: 'attribute',
-                        _characterid: token.get('represents')
-                    }).some((a) => {
-                        const targetAttrs = [
-                            'npc_' + 'str' + '_save_flag',
-                            'npc_' + 'dex' + '_save_flag',
-                            'npc_' + 'con' + '_save_flag',
-                            'npc_' + 'int' + '_save_flag',
-                            'npc_' + 'wis' + '_save_flag',
-                            'npc_' + 'cha' + '_save_flag'
-                        ];
-                        return (targetAttrs.includes(a.get('name')) && +a.get('current') != 2);
-                    })) {
-                        showNPCsaves.setWithWorker('current', '');
-                    }
-                    else {
-                        showNPCsaves.setWithWorker('current', '2');
-                    }
+                    checkNPCsaveSection(charID);
                 }
             }
         }
@@ -548,6 +527,39 @@ const PaladinAura = (function () {
             });
             output.setWithWorker('current', value || '0');
             return output;
+        }
+    }
+    function checkNPCsaveSection(charID) {
+        let showNPCsaves = findObjs({
+            _type: 'attribute',
+            _characterid: charID,
+            name: 'npc_saving_flag'
+        })[0];
+        if (showNPCsaves == undefined) {
+            showNPCsaves = createObj('attribute', {
+                _characterid: charID,
+                name: 'npc_saving_flag',
+                current: ''
+            });
+        }
+        if (findObjs({
+            _type: 'attribute',
+            _characterid: charID
+        }).some((a) => {
+            const targetAttrs = [
+                'npc_' + 'str' + '_save_flag',
+                'npc_' + 'dex' + '_save_flag',
+                'npc_' + 'con' + '_save_flag',
+                'npc_' + 'int' + '_save_flag',
+                'npc_' + 'wis' + '_save_flag',
+                'npc_' + 'cha' + '_save_flag'
+            ];
+            return targetAttrs.includes(a.get('name')) && +a.get('current') != 2;
+        })) {
+            showNPCsaves.setWithWorker('current', '');
+        }
+        else {
+            showNPCsaves.setWithWorker('current', '2');
         }
     }
     /**
@@ -674,15 +686,19 @@ const PaladinAura = (function () {
     function toggleActive() {
         const stateInitial = getState('active');
         setState('active', stateInitial == 'true' ? 'false' : 'true');
-        let output = '**Paladin Aura ' + stateInitial == 'false'
-            ? 'Enabled'
-            : 'Disabled' + '.**';
+        let output = '**Paladin Aura ' +
+            (stateInitial == 'false' ? 'Enabled' : 'Disabled') +
+            '.**';
         if (stateInitial == 'true') {
             output += '** All aura bonuses set to 0.**';
-            // for each token on the player page
+            // get all tokens
             findObjs({
                 _type: 'graphic',
-                _pageid: Campaign().get('playerpageid')
+                _subtype: 'token'
+            })
+                // get rid of any tokens that are not on an active page
+                .filter((t) => {
+                return getActivePages().includes(t.get('_pageid'));
             })
                 // filter out any tokens that represent no sheet
                 .filter((t) => {
@@ -698,6 +714,7 @@ const PaladinAura = (function () {
                 const token = getObj('graphic', t.id);
                 setBuff(token, 0);
             });
+            cleanMarkers();
         }
         else {
             paladinCheck();
@@ -705,6 +722,7 @@ const PaladinAura = (function () {
         toChat(output, getState('active') == 'true');
     }
     function clearAll() {
+        toChat('Clear all reached.', true);
         const buffAttrs = findObjs({
             _type: 'attribute',
             name: 'paladin_buff'
@@ -728,6 +746,7 @@ const PaladinAura = (function () {
                     ].forEach((abilityName) => {
                         modAttr(char.id, abilityName, -buffVal, true);
                     });
+                    checkNPCsaveSection(char.id);
                 }
                 else {
                     modAttr(char.id, 'globalsavemod', -buffVal);
@@ -736,6 +755,7 @@ const PaladinAura = (function () {
             }
         });
         cleanMarkers();
+        toChat('**All PaladinAura attributes cleared.**', true);
     }
     function getAttr(id, name) {
         const attr = findObjs({

@@ -103,7 +103,10 @@ const PaladinAura = (function() {
 
   let playerName: string, playerID: string, parts: string[];
 
-  const getActivePages = () => [
+  /**
+   * Returns a string array of all currently in-use page IDs.
+   */
+  const getActivePages = (): string[] => [
     ...new Set([
       Campaign().get('playerpageid') as string,
       ...(Object.values(Campaign().get('playerspecificpages')) as string[]),
@@ -319,7 +322,7 @@ const PaladinAura = (function() {
             } else {
               showConfig();
             }
-          } else if (parts[2] == 'RESET') {
+          } else if (parts[1] == 'RESET') {
             clearAll();
           }
         } else {
@@ -517,41 +520,7 @@ const PaladinAura = (function() {
           ].forEach((abilityName) => {
             modAttr(token.get('represents'), abilityName, adjust, true);
           });
-
-          let showNPCsaves = findObjs({
-            _type: 'attribute',
-            _characterid: charID,
-            name: 'npc_saving_flag'
-          })[0] as Attribute;
-          if (showNPCsaves == undefined) {
-            showNPCsaves = createObj('attribute', {
-              _characterid: token.get('represents'),
-              name: 'npc_saving_flag',
-              current: ''
-            });
-          }
-          if (
-            (findObjs({
-              _type: 'attribute',
-              _characterid: token.get('represents')
-            }) as Attribute[]).some((a) => {
-              const targetAttrs = [
-                'npc_' + 'str' + '_save_flag',
-                'npc_' + 'dex' + '_save_flag',
-                'npc_' + 'con' + '_save_flag',
-                'npc_' + 'int' + '_save_flag',
-                'npc_' + 'wis' + '_save_flag',
-                'npc_' + 'cha' + '_save_flag'
-              ];
-              return (
-                targetAttrs.includes(a.get('name')) && +a.get('current') != 2
-              );
-            })
-          ) {
-            showNPCsaves.setWithWorker('current', '');
-          } else {
-            showNPCsaves.setWithWorker('current', '2');
-          }
+          checkNPCsaveSection(charID);
         }
       }
     }
@@ -638,6 +607,41 @@ const PaladinAura = (function() {
       });
       output.setWithWorker('current', value || '0');
       return output;
+    }
+  }
+
+  function checkNPCsaveSection(charID: string): void {
+    let showNPCsaves = findObjs({
+      _type: 'attribute',
+      _characterid: charID,
+      name: 'npc_saving_flag'
+    })[0] as Attribute;
+    if (showNPCsaves == undefined) {
+      showNPCsaves = createObj('attribute', {
+        _characterid: charID,
+        name: 'npc_saving_flag',
+        current: ''
+      });
+    }
+    if (
+      (findObjs({
+        _type: 'attribute',
+        _characterid: charID
+      }) as Attribute[]).some((a) => {
+        const targetAttrs = [
+          'npc_' + 'str' + '_save_flag',
+          'npc_' + 'dex' + '_save_flag',
+          'npc_' + 'con' + '_save_flag',
+          'npc_' + 'int' + '_save_flag',
+          'npc_' + 'wis' + '_save_flag',
+          'npc_' + 'cha' + '_save_flag'
+        ];
+        return targetAttrs.includes(a.get('name')) && +a.get('current') != 2;
+      })
+    ) {
+      showNPCsaves.setWithWorker('current', '');
+    } else {
+      showNPCsaves.setWithWorker('current', '2');
     }
   }
 
@@ -781,16 +785,20 @@ const PaladinAura = (function() {
     const stateInitial = getState('active');
     setState('active', stateInitial == 'true' ? 'false' : 'true');
     let output =
-      '**Paladin Aura ' + stateInitial == 'false'
-        ? 'Enabled'
-        : 'Disabled' + '.**';
+      '**Paladin Aura ' +
+      (stateInitial == 'false' ? 'Enabled' : 'Disabled') +
+      '.**';
     if (stateInitial == 'true') {
       output += '** All aura bonuses set to 0.**';
-      // for each token on the player page
-      findObjs({
+      // get all tokens
+      (findObjs({
         _type: 'graphic',
-        _pageid: Campaign().get('playerpageid')
-      })
+        _subtype: 'token'
+      }) as Graphic[])
+        // get rid of any tokens that are not on an active page
+        .filter((t) => {
+          return getActivePages().includes(t.get('_pageid'));
+        })
         // filter out any tokens that represent no sheet
         .filter((t) => {
           const token = getObj('graphic', t.id);
@@ -805,6 +813,7 @@ const PaladinAura = (function() {
           const token = getObj('graphic', t.id);
           setBuff(token, 0);
         });
+      cleanMarkers();
     } else {
       paladinCheck();
     }
@@ -812,6 +821,7 @@ const PaladinAura = (function() {
   }
 
   function clearAll(): void {
+    toChat('Clear all reached.', true);
     const buffAttrs = findObjs({
       _type: 'attribute',
       name: 'paladin_buff'
@@ -834,6 +844,7 @@ const PaladinAura = (function() {
           ].forEach((abilityName) => {
             modAttr(char.id, abilityName, -buffVal, true);
           });
+          checkNPCsaveSection(char.id);
         } else {
           modAttr(char.id, 'globalsavemod', -buffVal);
         }
@@ -841,6 +852,7 @@ const PaladinAura = (function() {
       }
     });
     cleanMarkers();
+    toChat('**All PaladinAura attributes cleared.**', true);
   }
 
   function getAttr(id: string, name: string): string {
