@@ -1,11 +1,3 @@
-// TODO
-/*
-- Create a new function clearAll that does the following:
-  - Delete all PaladinSpecific attrs
-  - Delete all PaladinAbilities
-  - Delete all stateVars
-*/
-
 const PaladinAura = (function() {
   const version = '1.0.7';
 
@@ -847,7 +839,14 @@ const PaladinAura = (function() {
     }) as Ability[]).forEach((a) => {
       a.remove();
     });
-    toChat('**All PaladinAura attributes and abilities cleared.**', true);
+    // Delete each stateVar
+    states.forEach((s) => {
+      delete state[stateName + s.name];
+    });
+    toChat(
+      '**All PaladinAura attributes, abilities, and settings cleared.**',
+      true
+    );
   }
 
   function getAttr(id: string, name: string): string {

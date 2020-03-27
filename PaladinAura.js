@@ -1,6 +1,7 @@
 <<<<<<< master
 <<<<<<< master
 <<<<<<< master
+<<<<<<< master
 const PaladinAura = (function () {
     const version = '1.0.7';
 =======
@@ -20,6 +21,8 @@ const PaladinAura = (function () {
 =======
 =======
 >>>>>>> Functional for NPCs - pre-rework
+=======
+>>>>>>> Fully functional and finished. Ready for merge.
 const PaladinAura = (function () {
     const version = '1.0.6';
 >>>>>>> Needs testing
@@ -748,7 +751,11 @@ const PaladinAura = (function () {
         }).forEach((a) => {
             a.remove();
         });
-        toChat('**All PaladinAura attributes and abilities cleared.**', true);
+        // Delete each stateVar
+        states.forEach((s) => {
+            delete state[stateName + s.name];
+        });
+        toChat('**All PaladinAura attributes, abilities, and settings cleared.**', true);
     }
     function getAttr(id, name) {
         const attr = findObjs({
