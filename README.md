@@ -8,7 +8,7 @@ The API takes into account the paladin's level, and whether the bonus has alread
 
 Note:
 
-- The API will not run on pagees which have their scale unit set to anything other than "ft".
+- The API will not run on pages which have their scale unit set to anything other than "ft".
 
 **WARNING:** This API currently only works with [Roll20's 5E OGL D&D Character Sheet](https://wiki.roll20.net/5th_Edition_OGL_by_Roll20) and, like all API, requires a Pro Subscription to use.
 
@@ -65,6 +65,10 @@ There are only two settings that can be configured (currently).
 
 ## Changelog
 
+1.0.8
+- In the config there is now a CLEAR ALL button that allows a GM to clear all settings, attributes, and abilities in the game.
+- NPC saving throw regions no longer show on their sheet when all save bonuses are equal to their relevant attribute modifiers.
+
 1.0.7
 - Fixed status marker config error for clean installs.
 
@@ -72,16 +76,16 @@ There are only two settings that can be configured (currently).
 - Paladins now have a Token Ability (ToggleAuraTarget) that allows them to toggle whether NPCs and Players receive a buff to saving throws from their Paladin Aura.
 
 1.0.5
-- API now runs on any page with active player(s)
+- API now runs on any page with active player(s).
 
 1.0.4
-- Cleaned up API Output Console feed
+- Cleaned up API Output Console feed.
 
 1.0.3
-- Added custom token-status marker integration (use `!pa config` in Roll20 to change settings)
+- Added custom token-status marker integration (use `!pa config` in Roll20 to change settings).
 
 1.0.2
-- Added a bottom limit to the Aura's bonus (+1)
+- Added a bottom limit to the Aura's bonus (+1).
 
 1.0.1
 - Added token-status marker integration. When the PaladinAura affects a token that token now receives a marker with a number to represent the bonus.

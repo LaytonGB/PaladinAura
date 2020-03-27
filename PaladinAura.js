@@ -1,5 +1,5 @@
 const PaladinAura = (function () {
-    const version = '1.0.7';
+    const version = '1.0.8';
     function isActiveValue(val) {
         return ['true', 'false'].includes(val);
     }
@@ -32,6 +32,9 @@ const PaladinAura = (function () {
     const nameLog = name + ': ';
     const apiCall = '!pa';
     let playerName, playerID, parts;
+    /**
+     * Returns a string array of all currently in-use page IDs.
+     */
     const getActivePages = () => [
         ...new Set([
             Campaign().get('playerpageid'),
@@ -149,6 +152,7 @@ const PaladinAura = (function () {
                 : s.customConfig;
             output += `{{${s.name}=[${currentValue}](${apiCall} config ${s.name} ?{New ${s.name} value${stringVals}})}}`;
         });
+        output += `{{**CAUTION**=[CLEAR ALL](!&#13;?{Are you sure? All custom paladin targets will be lost|Cancel,|I am sure,${apiCall} RESET})}}`;
         toChat(output, undefined, playerName);
         /**
          * Moves the default value to the start of the array and presents
@@ -189,6 +193,9 @@ const PaladinAura = (function () {
         paladinCheck();
     }
     function cleanMarkers(oldMarker) {
+        if (oldMarker == undefined) {
+            oldMarker = getState('status_marker');
+        }
         findObjs({
             _type: 'graphic'
         })
@@ -204,7 +211,7 @@ const PaladinAura = (function () {
         if (msg.type == 'api' && parts[0] == apiCall) {
             playerName = msg.who.split(' ', 1)[0];
             playerID = msg.playerid;
-            if ([undefined, 'config', 'help', 'toggleAuraTarget'].includes(parts[1])) {
+            if ([undefined, 'config', 'help', 'toggleAuraTarget', 'RESET'].includes(parts[1])) {
                 if (parts[1] == 'help') {
                     showHelp();
                 }
@@ -222,6 +229,9 @@ const PaladinAura = (function () {
                         else {
                             showConfig();
                         }
+                    }
+                    else if (parts[1] == 'RESET') {
+                        clearAll();
                     }
                 }
                 else {
@@ -387,7 +397,7 @@ const PaladinAura = (function () {
                 const adjust = +value - +attrValue;
                 attr.setWithWorker('current', value.toString());
                 if (+getAttr(charID, 'npc') != 1) {
-                    modAttr(token, 'globalsavemod', adjust);
+                    modAttr(token.get('represents'), 'globalsavemod', adjust);
                 }
                 else {
                     [
@@ -398,25 +408,26 @@ const PaladinAura = (function () {
                         'wisdom',
                         'charisma'
                     ].forEach((abilityName) => {
-                        modAttr(token, abilityName, adjust, true);
+                        modAttr(token.get('represents'), abilityName, adjust, true);
                     });
+                    checkNPCsaveSection(charID);
                 }
             }
         }
     }
-    function modAttr(token, attrName, value, isNPC) {
-        const charID = token.get('represents');
+    /**
+     * @param charID Target character ID.
+     * @param attrName Target attribute (eg. globalsavemod).
+     * @param value The difference between the old PaladinBuff and the new one.
+     * @param isNPC Token character is an NPC.
+     */
+    function modAttr(charID, attrName, value, isNPC) {
         if (isNPC) {
             const shortAttrName = attrName.slice(0, 3);
             let attrMod = findObjs({
                 _type: 'attribute',
                 _characterid: charID,
                 name: attrName + '_mod'
-            })[0];
-            const showNPCsaves = findObjs({
-                _type: 'attribute',
-                _characterid: charID,
-                name: 'npc_saving_flag'
             })[0];
             const NPCattrs = findObjs({
                 _type: 'attribute',
@@ -438,12 +449,6 @@ const PaladinAura = (function () {
             }
             if (saveBonusAttr == undefined) {
                 saveBonusAttr = createAttr('npc_' + shortAttrName + '_save');
-            }
-            if (showNPCsaves == undefined) {
-                createAttr('npc_saving_flag', '2');
-            }
-            else if (+showNPCsaves.get('current') != 2) {
-                showNPCsaves.setWithWorker('current', '2');
             }
             if (+saveFlagAttr.get('current') == 2) {
                 const adjust = +saveBonusAttr.get('current') + value;
@@ -486,6 +491,39 @@ const PaladinAura = (function () {
             });
             output.setWithWorker('current', value || '0');
             return output;
+        }
+    }
+    function checkNPCsaveSection(charID) {
+        let showNPCsaves = findObjs({
+            _type: 'attribute',
+            _characterid: charID,
+            name: 'npc_saving_flag'
+        })[0];
+        if (showNPCsaves == undefined) {
+            showNPCsaves = createObj('attribute', {
+                _characterid: charID,
+                name: 'npc_saving_flag',
+                current: ''
+            });
+        }
+        if (findObjs({
+            _type: 'attribute',
+            _characterid: charID
+        }).some((a) => {
+            const targetAttrs = [
+                'npc_' + 'str' + '_save_flag',
+                'npc_' + 'dex' + '_save_flag',
+                'npc_' + 'con' + '_save_flag',
+                'npc_' + 'int' + '_save_flag',
+                'npc_' + 'wis' + '_save_flag',
+                'npc_' + 'cha' + '_save_flag'
+            ];
+            return targetAttrs.includes(a.get('name')) && +a.get('current') != 2;
+        })) {
+            showNPCsaves.setWithWorker('current', '');
+        }
+        else {
+            showNPCsaves.setWithWorker('current', '2');
         }
     }
     /**
@@ -612,15 +650,19 @@ const PaladinAura = (function () {
     function toggleActive() {
         const stateInitial = getState('active');
         setState('active', stateInitial == 'true' ? 'false' : 'true');
-        let output = '**Paladin Aura ' + stateInitial == 'false'
-            ? 'Enabled'
-            : 'Disabled' + '.**';
+        let output = '**Paladin Aura ' +
+            (stateInitial == 'false' ? 'Enabled' : 'Disabled') +
+            '.**';
         if (stateInitial == 'true') {
             output += '** All aura bonuses set to 0.**';
-            // for each token on the player page
+            // get all tokens
             findObjs({
                 _type: 'graphic',
-                _pageid: Campaign().get('playerpageid')
+                _subtype: 'token'
+            })
+                // get rid of any tokens that are not on an active page
+                .filter((t) => {
+                return getActivePages().includes(t.get('_pageid'));
             })
                 // filter out any tokens that represent no sheet
                 .filter((t) => {
@@ -636,11 +678,49 @@ const PaladinAura = (function () {
                 const token = getObj('graphic', t.id);
                 setBuff(token, 0);
             });
+            cleanMarkers();
         }
         else {
             paladinCheck();
         }
         toChat(output, getState('active') == 'true');
+    }
+    function clearAll() {
+        const buffAttrs = findObjs({
+            _type: 'attribute',
+            name: 'paladin_buff'
+        });
+        buffAttrs.forEach((attr) => {
+            if (+attr.get('current') != 0 && attr.get('current') != undefined) {
+                const token = findObjs({
+                    represents: attr.get('_characterid')
+                })[0];
+                setBuff(token, 0);
+            }
+            attr.remove();
+        });
+        // Find and remove all paladin aura inclusion / exclusion attrs
+        findObjs({
+            _type: 'attribute'
+        })
+            .filter((a) => {
+            return a.get('name').includes('PaladinAura_');
+        })
+            .forEach((a) => {
+            a.remove();
+        });
+        // Find and remove all paladin abilities
+        findObjs({
+            _type: 'ability',
+            name: 'ToggleAuraTarget'
+        }).forEach((a) => {
+            a.remove();
+        });
+        // Delete each stateVar
+        states.forEach((s) => {
+            delete state[stateName + s.name];
+        });
+        toChat('**All PaladinAura attributes, abilities, and settings cleared.**', true);
     }
     function getAttr(id, name) {
         const attr = findObjs({
