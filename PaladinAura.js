@@ -238,11 +238,14 @@ const PaladinAura = (function () {
         if (getState('active') == 'false') {
             return;
         } // stops here if the API is inactive
-        const playerTokens = getPlayerTokens();
-        const paladinObjects = getPaladinsFromTokens(playerTokens);
         const page = getObj('page', Campaign().get('playerpageid'));
+        if (page.get('scale_units') != 'ft') {
+            return;
+        } // stops here if the page is not measured in feet
         const unitsPerSquare = page.get('scale_number');
         const pixelsPerSquare = page.get('snapping_increment') * 70;
+        const playerTokens = getPlayerTokens();
+        const paladinObjects = getPaladinsFromTokens(playerTokens);
         playerTokens.forEach((t) => {
             let saveBonus;
             paladinObjects.forEach((p) => {
