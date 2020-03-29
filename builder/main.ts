@@ -92,29 +92,6 @@ const PaladinAura = (function() {
   let playerName: string, playerID: string, parts: string[];
 
   /**
-   * Returns a string array of all currently in-use page IDs.
-   */
-  const getActivePages = (): string[] => [
-    ...new Set([
-      Campaign().get('playerpageid') as string,
-      ...(Object.values(Campaign().get('playerspecificpages')) as string[]),
-      ...((findObjs({
-        type: 'player',
-        online: true
-      }) as Player[])
-        .filter((p) => playerIsGM(p.id))
-        .map((p) => p.get('_lastpage'))
-        // excludes pages not measured in feet
-        .filter((p) => {
-          if (getObj('page', p) != undefined) {
-            return getObj('page', p).get('scale_units') == 'ft';
-          }
-          return true;
-        }) as string[])
-    ])
-  ];
-
-  /**
    * Checks each macro from the macroArr array to ensure their functions are up to date.
    */
   function checkMacros() {
@@ -338,89 +315,8 @@ const PaladinAura = (function() {
     if (getState('active') == 'false') {
       return;
     } // stops here if the API is inactive
-    const allTokens = findObjs({
-      _type: 'graphic',
-      _subtype: 'token'
-    }) as Graphic[];
-    const playerTokens = allTokens.filter((token) => {
-      const charID = token.get('represents');
-      const char = getObj('character', charID);
-      const isNPC = +getAttr(charID, 'npc') == 1;
-      // return any token that has a character,
-      // is not NPC or has custom attr, and is on an active page
-      return (
-        char != undefined &&
-        (!isNPC ||
-          (findObjs({
-            _type: 'attribute',
-            _characterid: charID
-          }) as Attribute[]).find((a) => {
-            return a.get('name').includes(stateName);
-          }) != undefined) &&
-        getActivePages().includes(token.get('_pageid'))
-      );
-    });
-    const auraTokens = playerTokens.map((token) => {
-      const charID = token.get('represents');
-      let output: PaladinObject;
-      if (
-        getAttr(charID, 'class')
-          .toLowerCase()
-          .includes('paladin') &&
-        +getAttr(charID, 'base_level') >= 6 &&
-        +getAttr(charID, 'hp') > 0
-      ) {
-        output = setOutput('base_level');
-      } else {
-        ['multiclass1', 'multiclass2', 'multiclass3'].forEach((className) => {
-          if (+getAttr(charID, className + '_flag') == 1) {
-            if (
-              getAttr(charID, className)
-                .toLowerCase()
-                .includes('paladin') &&
-              +getAttr(charID, className + '_lvl') >= 6 &&
-              +getAttr(charID, 'hp') > 0
-            ) {
-              output = setOutput(className + '_lvl');
-            }
-          }
-        });
-      }
-      if (output) {
-        return output;
-      } else {
-        return token;
-      }
-
-      /**
-       * Returns a PaladinObject.
-       * @param levelAttr The attribute of the character object that represents their paladin level.
-       */
-      function setOutput(levelAttr: string): PaladinObject {
-        const output = {
-          chaBonus: Math.max(+getAttr(charID, 'charisma_mod'), 1),
-          id: charID,
-          left: +token.get('left'),
-          level: +getAttr(charID, levelAttr),
-          radius: +getAttr(charID, levelAttr) >= 18 ? 30 : 10,
-          token: token,
-          top: +token.get('top')
-        };
-        return output;
-      }
-    });
-    const paladinObjects = auraTokens.filter((obj: any) => {
-      return obj.token !== undefined;
-    }) as PaladinObject[];
-    let abilitiesChanged = false;
-    paladinObjects.forEach((p) => {
-      if (paladinAbilities(p.id)) {
-        abilitiesChanged = true;
-      }
-    });
-    if (abilitiesChanged) {
-      toChat('Some paladin abilities were wrong. They have been fixed.', true);
-    }
+    const playerTokens = getPlayerTokens();
+    const paladinObjects = getPaladinsFromTokens(playerTokens);
     playerTokens.forEach((t) => {
       let saveBonus: number;
       const page = getObj('page', t.get('_pageid'));
@@ -530,6 +426,112 @@ const PaladinAura = (function() {
         }
       }
     }
+  }
+
+  function getPlayerTokens(): Graphic[] {
+    return (findObjs({
+      _type: 'graphic',
+      _subtype: 'token',
+      _pageid: Campaign().get('playerpageid'),
+      layer: 'objects'
+    }) as Graphic[]).filter((token) => {
+      const charID = token.get('represents');
+      const char = getObj('character', charID);
+      const isNPC = +getAttr(charID, 'npc') == 1;
+      const hasUniqAttr = +getAttr(charID, stateName + 'uniq') == 1;
+      // return any token that has a character and
+      // is not NPC or has custom attr
+      return char != undefined && (!isNPC || hasUniqAttr);
+    });
+  }
+
+  function getPaladinsFromTokens(
+    tokens: Graphic[],
+    ignoreLevel?: boolean
+  ): PaladinObject[] {
+    const attrs: string[] = [];
+    return (
+      tokens
+        // filter out any token which has no paladin class
+        // or that is below 6th level
+        .filter((t, i) => {
+          let keep: boolean;
+          const levelAttr = charIsPaladin(t.get('represents'));
+          if (levelAttr == undefined) {
+            keep = false;
+          } else {
+            if (ignoreLevel) {
+              keep = true;
+            } else {
+              keep = +getAttr(t.get('represents'), levelAttr) >= 6;
+            }
+          }
+          // if token is to be kept, replace the class attr with the level attr
+          // else, remove from array
+          if (keep) {
+            attrs[i] = levelAttr;
+          } else {
+            attrs.splice(i, 1);
+          }
+          return keep;
+        })
+        // filter out any token that is at or below 0 hit points
+        .filter((t, i) => {
+          const conscious = +getAttr(t.get('represents'), 'hp') > 0;
+          // if unconscious remove from array
+          if (!conscious) {
+            attrs.splice(i, 1);
+          }
+          return conscious;
+        })
+        .map((t, i) => {
+          return {
+            chaBonus: Math.max(
+              +getAttr(t.get('represents'), 'charisma_mod'),
+              1
+            ),
+            id: t.get('represents'),
+            left: +t.get('left'),
+            level: +getAttr(t.get('represents'), attrs[i]),
+            radius: +getAttr(t.get('represents'), attrs[i]) >= 18 ? 30 : 10,
+            token: t,
+            top: +t.get('top')
+          };
+        })
+    );
+  }
+
+  /**
+   * Returns the name of the attribute for the character's
+   * paladin level.
+   * @param charID A character ID.
+   */
+  function charIsPaladin(charID: string): string | undefined {
+    let levelAttr: string;
+    const classAttr = [
+      'class',
+      'multiclass1',
+      'multiclass2',
+      'multiclass3'
+    ].find((a) => {
+      getAttr(charID, a)
+        .toLowerCase()
+        .includes('paladin');
+    });
+    if (classAttr == undefined) {
+      return;
+    }
+    switch (classAttr) {
+      case 'class':
+        levelAttr = 'base_level';
+        break;
+      case 'multiclass1':
+      case 'multiclass2':
+      case 'multiclass3':
+        levelAttr = classAttr + '_lvl';
+        break;
+    }
+    return levelAttr;
   }
 
   /**
@@ -651,46 +653,6 @@ const PaladinAura = (function() {
     }
   }
 
-  /**
-   * Applies all paladin abilities to a character.
-   * @param pID A Character ID.
-   */
-  function paladinAbilities(pID: string): boolean {
-    interface AbilityObj {
-      name: string;
-      action: string;
-    }
-    const paladinAbilityArr: AbilityObj[] = [
-      {
-        name: 'ToggleAuraTarget',
-        action: '!pa toggleAuraTarget @{character_id} @{target|character_id}'
-      }
-    ];
-    let configChanged = false;
-    paladinAbilityArr.forEach((a) => {
-      const ability = findObjs({
-        _type: 'ability',
-        _characterid: pID,
-        name: a.name
-      })[0] as Ability;
-      if (ability != undefined) {
-        if (ability.get('action') != a.action) {
-          configChanged = true;
-          ability.set('action', a.action);
-        }
-      } else {
-        configChanged = true;
-        createObj('ability', {
-          _characterid: pID,
-          name: a.name,
-          action: a.action,
-          istokenaction: true
-        });
-      }
-    });
-    return configChanged;
-  }
-
   function toggleAuraTarget(pID: string, tID: string): void {
     const paladin = getObj('character', pID);
     const target = getObj('character', tID);
@@ -698,6 +660,7 @@ const PaladinAura = (function() {
       error('A target was undefined.', 21);
       return;
     }
+    setAttr(tID, stateName + 'uniq', '1');
     let newValue: string;
     const attr = findObjs({
       _type: 'attribute',
@@ -799,10 +762,6 @@ const PaladinAura = (function() {
         _type: 'graphic',
         _subtype: 'token'
       }) as Graphic[])
-        // get rid of any tokens that are not on an active page
-        .filter((t) => {
-          return getActivePages().includes(t.get('_pageid'));
-        })
         // filter out any tokens that represent no sheet
         .filter((t) => {
           const token = getObj('graphic', t.id);
@@ -961,6 +920,68 @@ const PaladinAura = (function() {
   }
 
   function startupChecks() {
+    checkPaladinAbilities();
+    checkStates();
+  }
+
+  /**
+   * Finds all paladin characters and checks their abilities.
+   * If a paladin's abilities are found to be incorrect, they
+   * will be corrected and the user will be notified.
+   */
+  function checkPaladinAbilities(): void {
+    interface AbilityObj {
+      name: string;
+      action: string;
+    }
+    const paladinAbilityArr: AbilityObj[] = [
+      {
+        name: 'ToggleAuraTarget',
+        action: '!pa toggleAuraTarget @{character_id} @{target|character_id}'
+      }
+    ];
+    const allChars = (findObjs({
+      _type: 'character'
+    }) as Character[]).filter((c) => {
+      return +getAttr(c.id, 'npc') != 1;
+    });
+    const paladins = allChars.filter((c) => {
+      return charIsPaladin(c.id) == undefined;
+    });
+
+    let configChanged = false;
+    paladins.forEach((p) => {
+      paladinAbilityArr.forEach((a) => {
+        const ability = findObjs({
+          _type: 'ability',
+          _characterid: p.id,
+          name: a.name
+        })[0] as Ability;
+        if (ability == undefined) {
+          configChanged = true;
+          createObj('ability', {
+            _characterid: p.id,
+            name: a.name,
+            action: a.action,
+            istokenaction: true
+          });
+        } else {
+          if (ability.get('action') != a.action) {
+            configChanged = true;
+            ability.set('action', a.action);
+          }
+        }
+      });
+    });
+    if (configChanged) {
+      toChat(
+        'Some paladin abilities were wrong or missing. They have been fixed or added respectively.',
+        true
+      );
+    }
+  }
+
+  function checkStates(): void {
     let changedStates = 0,
       lastState: string,
       lastOldValue: string,
