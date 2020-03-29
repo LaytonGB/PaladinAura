@@ -428,6 +428,10 @@ const PaladinAura = (function() {
     }
   }
 
+  /**
+   * Returns a token array consisting of tokens that represent
+   * non-npc character sheets.
+   */
   function getPlayerTokens(): Graphic[] {
     return (findObjs({
       _type: 'graphic',
@@ -445,6 +449,13 @@ const PaladinAura = (function() {
     });
   }
 
+  /**
+   * Searches an array of tokens for all paladins and returns those
+   * paladins as an array of paladin objects.
+   * @param tokens A token array from which to find paladins.
+   * @param ignoreLevel Optional. A boolean that if true, ignores the
+   * level of the tokens in their paladin calculation.
+   */
   function getPaladinsFromTokens(
     tokens: Graphic[],
     ignoreLevel?: boolean
