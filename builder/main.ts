@@ -514,7 +514,7 @@ const PaladinAura = (function() {
       'multiclass2',
       'multiclass3'
     ].find((a) => {
-      getAttr(charID, a)
+      return getAttr(charID, a)
         .toLowerCase()
         .includes('paladin');
     });
@@ -825,13 +825,13 @@ const PaladinAura = (function() {
   }
 
   function getAttr(charID: string, name: string): string {
-    const attr = findObjs({
+    const attrs = findObjs({
       _type: 'attribute',
       _characterid: charID,
       name: name
     }) as Attribute[];
-    if (attr.length > 0) {
-      return attr[0].get('current');
+    if (attrs.length > 0) {
+      return attrs[0].get('current');
     }
     return 'undefined';
   }

@@ -413,7 +413,7 @@ const PaladinAura = (function () {
             'multiclass2',
             'multiclass3'
         ].find((a) => {
-            getAttr(charID, a)
+            return getAttr(charID, a)
                 .toLowerCase()
                 .includes('paladin');
         });
@@ -699,13 +699,13 @@ const PaladinAura = (function () {
         toChat('**All PaladinAura attributes, abilities, and settings cleared.**', true);
     }
     function getAttr(charID, name) {
-        const attr = findObjs({
+        const attrs = findObjs({
             _type: 'attribute',
             _characterid: charID,
             name: name
         });
-        if (attr.length > 0) {
-            return attr[0].get('current');
+        if (attrs.length > 0) {
+            return attrs[0].get('current');
         }
         return 'undefined';
     }
