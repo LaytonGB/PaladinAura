@@ -1,6 +1,6 @@
 # PaladinAura
 
-**VERSION:** 1.0.10
+**VERSION:** 1.0.11
 
 A roll20 API for 5E D&D that automatically adjusts the saving throw bonuses of Paladins and those close to them.
 
@@ -8,6 +8,7 @@ The API takes into account the paladin's level, and whether the bonus has alread
 
 Note:
 
+- The API will only run on the player-ribbon page.
 - The API will not run on pages which have their scale unit set to anything other than "ft".
 
 **WARNING:** This API currently only works with [Roll20's 5E OGL D&D Character Sheet](https://wiki.roll20.net/5th_Edition_OGL_by_Roll20) and, like all API, requires a Pro Subscription to use.
@@ -64,6 +65,11 @@ There are only two settings that can be configured (currently).
 [Submit an issue report or feature request.](https://github.com/LaytonGB/PaladinAura/issues/new/choose)
 
 ## Changelog
+
+1.0.11
+- Optimized API massively. 
+- API will now again only run on the player-ribbon page.
+- Improved code readability.
 
 1.0.10
 - Fixed charactermancer compatibility issues.
