@@ -317,11 +317,11 @@ const PaladinAura = (function() {
     } // stops here if the API is inactive
     const playerTokens = getPlayerTokens();
     const paladinObjects = getPaladinsFromTokens(playerTokens);
+    const page = getObj('page', Campaign().get('playerpageid'));
+    const unitsPerSquare = page.get('scale_number');
+    const pixelsPerSquare = page.get('snapping_increment') * 70;
     playerTokens.forEach((t) => {
       let saveBonus: number;
-      const page = getObj('page', t.get('_pageid'));
-      const pixelsPerSquare = page.get('snapping_increment') * 70;
-      const unitsPerSquare = page.get('scale_number');
       paladinObjects.forEach((p) => {
         if (
           t.get('represents') == p.id &&
@@ -343,38 +343,38 @@ const PaladinAura = (function() {
         } else {
           saveBonus = saveBonus ? saveBonus : 0;
         }
-
-        function distCalc(distA: number, distB: number) {
-          const diagonal =
-            getState('diagonal_calc_override') == 'none'
-              ? page.get('diagonaltype')
-              : getState('diagonal_calc_override');
-          if (diagonal == 'threefive') {
-            return (
-              distA + Math.floor(distB / pixelsPerSquare / 2) * pixelsPerSquare
-            );
-          }
-          if (diagonal == 'foure') {
-            return distA;
-          }
-          if (diagonal == 'pythagorean') {
-            return (
-              Math.round(
-                Math.sqrt(
-                  Math.pow(distA / pixelsPerSquare, 2) +
-                    Math.pow(distB / pixelsPerSquare, 2)
-                )
-              ) * pixelsPerSquare
-            );
-          }
-          if (diagonal == 'manhattan') {
-            return distA + distB;
-          }
-        }
       });
       saveBonus = saveBonus ? saveBonus : 0;
       setBuff(t, saveBonus);
     });
+
+    function distCalc(distA: number, distB: number) {
+      const diagonal =
+        getState('diagonal_calc_override') == 'none'
+          ? page.get('diagonaltype')
+          : getState('diagonal_calc_override');
+      if (diagonal == 'threefive') {
+        return (
+          distA + Math.floor(distB / pixelsPerSquare / 2) * pixelsPerSquare
+        );
+      }
+      if (diagonal == 'foure') {
+        return distA;
+      }
+      if (diagonal == 'pythagorean') {
+        return (
+          Math.round(
+            Math.sqrt(
+              Math.pow(distA / pixelsPerSquare, 2) +
+                Math.pow(distB / pixelsPerSquare, 2)
+            )
+          ) * pixelsPerSquare
+        );
+      }
+      if (diagonal == 'manhattan') {
+        return distA + distB;
+      }
+    }
   }
 
   /**
@@ -708,28 +708,37 @@ const PaladinAura = (function() {
 
   function updateCustomConfigs(): void {
     if (Campaign() != undefined) {
-      updateTokenMarkers();
+      states
+        .filter((s) => {
+          return s.customConfig == 'true';
+        })
+        .forEach((s) => {
+          switch (s.name) {
+            case 'status_marker':
+              updateTokenMarkers(s);
+              break;
+            default:
+              error(
+                'Custom config for setting "' +
+                  s.name +
+                  '" could not be found.',
+                -4
+              );
+          }
+        });
     }
 
-    function updateTokenMarkers() {
+    function updateTokenMarkers(s: StateForm): void {
       const markerObjs = JSON.parse(
         Campaign().get('_token_markers') || '[]'
       ) as TokenMarkerObject[];
-      states
-        .filter((s) => s.customConfig == 'true')
-        .forEach((s) => {
-          switch (s.name) {
-            case 'status_marker': {
-              let output = '|bolt-shield,status_bolt-shield';
-              tokenMarkerSort(markerObjs, 'name').forEach((m) => {
-                if (m.name != 'bolt-shield') {
-                  output += '|' + m.name + ',status_' + m.tag;
-                }
-              });
-              s.customConfig = output;
-            }
-          }
-        });
+      let output = '|bolt-shield,status_bolt-shield';
+      tokenMarkerSort(markerObjs, 'name').forEach((m) => {
+        if (m.name != 'bolt-shield') {
+          output += '|' + m.name + ',status_' + m.tag;
+        }
+      });
+      s.customConfig = output;
     }
   }
 

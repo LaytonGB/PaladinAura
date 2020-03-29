@@ -240,11 +240,11 @@ const PaladinAura = (function () {
         } // stops here if the API is inactive
         const playerTokens = getPlayerTokens();
         const paladinObjects = getPaladinsFromTokens(playerTokens);
+        const page = getObj('page', Campaign().get('playerpageid'));
+        const unitsPerSquare = page.get('scale_number');
+        const pixelsPerSquare = page.get('snapping_increment') * 70;
         playerTokens.forEach((t) => {
             let saveBonus;
-            const page = getObj('page', t.get('_pageid'));
-            const pixelsPerSquare = page.get('snapping_increment') * 70;
-            const unitsPerSquare = page.get('scale_number');
             paladinObjects.forEach((p) => {
                 if (t.get('represents') == p.id &&
                     getAttr(p.id, 'mancer_confirm').trim() == 'on' &&
@@ -262,28 +262,28 @@ const PaladinAura = (function () {
                 else {
                     saveBonus = saveBonus ? saveBonus : 0;
                 }
-                function distCalc(distA, distB) {
-                    const diagonal = getState('diagonal_calc_override') == 'none'
-                        ? page.get('diagonaltype')
-                        : getState('diagonal_calc_override');
-                    if (diagonal == 'threefive') {
-                        return (distA + Math.floor(distB / pixelsPerSquare / 2) * pixelsPerSquare);
-                    }
-                    if (diagonal == 'foure') {
-                        return distA;
-                    }
-                    if (diagonal == 'pythagorean') {
-                        return (Math.round(Math.sqrt(Math.pow(distA / pixelsPerSquare, 2) +
-                            Math.pow(distB / pixelsPerSquare, 2))) * pixelsPerSquare);
-                    }
-                    if (diagonal == 'manhattan') {
-                        return distA + distB;
-                    }
-                }
             });
             saveBonus = saveBonus ? saveBonus : 0;
             setBuff(t, saveBonus);
         });
+        function distCalc(distA, distB) {
+            const diagonal = getState('diagonal_calc_override') == 'none'
+                ? page.get('diagonaltype')
+                : getState('diagonal_calc_override');
+            if (diagonal == 'threefive') {
+                return (distA + Math.floor(distB / pixelsPerSquare / 2) * pixelsPerSquare);
+            }
+            if (diagonal == 'foure') {
+                return distA;
+            }
+            if (diagonal == 'pythagorean') {
+                return (Math.round(Math.sqrt(Math.pow(distA / pixelsPerSquare, 2) +
+                    Math.pow(distB / pixelsPerSquare, 2))) * pixelsPerSquare);
+            }
+            if (diagonal == 'manhattan') {
+                return distA + distB;
+            }
+        }
     }
     /**
      * Adjusts the Paladin bonus being given to the provided token.
@@ -595,25 +595,31 @@ const PaladinAura = (function () {
     }
     function updateCustomConfigs() {
         if (Campaign() != undefined) {
-            updateTokenMarkers();
-        }
-        function updateTokenMarkers() {
-            const markerObjs = JSON.parse(Campaign().get('_token_markers') || '[]');
             states
-                .filter((s) => s.customConfig == 'true')
+                .filter((s) => {
+                return s.customConfig == 'true';
+            })
                 .forEach((s) => {
                 switch (s.name) {
-                    case 'status_marker': {
-                        let output = '|bolt-shield,status_bolt-shield';
-                        tokenMarkerSort(markerObjs, 'name').forEach((m) => {
-                            if (m.name != 'bolt-shield') {
-                                output += '|' + m.name + ',status_' + m.tag;
-                            }
-                        });
-                        s.customConfig = output;
-                    }
+                    case 'status_marker':
+                        updateTokenMarkers(s);
+                        break;
+                    default:
+                        error('Custom config for setting "' +
+                            s.name +
+                            '" could not be found.', -4);
                 }
             });
+        }
+        function updateTokenMarkers(s) {
+            const markerObjs = JSON.parse(Campaign().get('_token_markers') || '[]');
+            let output = '|bolt-shield,status_bolt-shield';
+            tokenMarkerSort(markerObjs, 'name').forEach((m) => {
+                if (m.name != 'bolt-shield') {
+                    output += '|' + m.name + ',status_' + m.tag;
+                }
+            });
+            s.customConfig = output;
         }
     }
     /**
