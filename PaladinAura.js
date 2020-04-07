@@ -1,5 +1,5 @@
 const PaladinAura = (function () {
-    const version = '1.0.10';
+    const version = '1.0.11';
     function isActiveValue(val) {
         return ['true', 'false'].includes(val);
     }
