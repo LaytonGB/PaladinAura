@@ -10,6 +10,7 @@ Note:
 
 - The API will only run on the player-ribbon page.
 - The API will not run on pages which have their scale unit set to anything other than "ft".
+- The API may have bad interactions with non-square tokens.
 
 **WARNING:** This API currently only works with [Roll20's 5E OGL D&D Character Sheet](https://wiki.roll20.net/5th_Edition_OGL_by_Roll20) and, like all API, requires a Pro Subscription to use.
 
@@ -65,6 +66,10 @@ There are only two settings that can be configured (currently).
 [Submit an issue report or feature request.](https://github.com/LaytonGB/PaladinAura/issues/new/choose)
 
 ## Changelog
+
+1.0.12
+- Functions properly with 2x2 and larger tokens.
+- Issues may be present with non-square tokens.
 
 1.0.11
 - Optimized API massively. 
