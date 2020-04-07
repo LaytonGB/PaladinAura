@@ -42,5 +42,8 @@
     "minimist": "^1.2.5",
     "prettier": "^1.19.1",
     "typescript": "^3.8.3"
-  }
+  },
+  "subject": "Version",
+  "status": "0.0.1",
+  "color": "blue"
 }
