@@ -334,8 +334,13 @@ const PaladinAura = (function() {
           setAttr(p.id, 'paladin_buff', p.chaBonus.toString());
         }
         const distLimit = (p.radius / unitsPerSquare) * pixelsPerSquare;
-        const xDist = Math.abs(t.get('left') - p.left);
-        const yDist = Math.abs(t.get('top') - p.top);
+        const tokenSizeAdjust =
+          t.get('width') == pixelsPerSquare
+            ? 0
+            : (Math.floor(t.get('width') / pixelsPerSquare) - 1) *
+              (pixelsPerSquare / 2);
+        const xDist = Math.abs(t.get('left') - p.left) - tokenSizeAdjust;
+        const yDist = Math.abs(t.get('top') - p.top) - tokenSizeAdjust;
         const distTotal =
           xDist >= yDist ? distCalc(xDist, yDist) : distCalc(yDist, xDist);
         if (
