@@ -1,6 +1,6 @@
 # PaladinAura
 
-[![Version Button](https://badgen.net/https/raw.githubusercontent.com/LaytonGB/PaladinAura/master/builder/package.json?cache=300)](https://raw.githubusercontent.com/LaytonGB/PaladinAura/master/PaladinAura.js)
+[![Version Button](https://badgen.net/https/raw.githubusercontent.com/LaytonGB/PaladinAura/master/builder/package.json?cache=300)](https://raw.githubusercontent.com/LaytonGB/PaladinAura/master/PaladinAura.js) [![Sponsor Button](https://badgen.net/badge/Sponsor%20me%20a%20Coffee/PayPal/?color=pink)](https://paypal.me/LaytonGB)
 
 A roll20 API for 5E D&D that automatically adjusts the saving throw bonuses of Paladins and those close to them.
 
