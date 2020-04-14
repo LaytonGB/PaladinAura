@@ -67,6 +67,10 @@ There are only two settings that can be configured (currently).
 
 ## Changelog
 
+1.0.13
+- Code auto-runs when any character's HP is changed to or from 0.
+- Minor bugs fixed to do with NPCs receiving buff.
+
 1.0.12
 - Functions properly with 2x2 and larger tokens.
 - Issues may be present with non-square tokens.
