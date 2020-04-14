@@ -950,6 +950,16 @@ const PaladinAura = (function() {
     log(nameLog + error + ` Error code ${code}.`);
   }
 
+  function checkHP(attr: Attribute, prev: { current: string }) {
+    if (
+      attr.get('name').toLowerCase() == 'hp' &&
+      (+attr.get('current') == 0 || +prev.current == 0) &&
+      charIsPaladin(attr.get('_characterid')) != undefined
+    ) {
+      paladinCheck();
+    }
+  }
+
   function startupChecks() {
     checkPaladinAbilities();
     checkStates();
@@ -1054,6 +1064,7 @@ const PaladinAura = (function() {
   function registerEventHandlers() {
     on('chat:message', handleInput);
     on('change:graphic', paladinCheck);
+    on('change:attribute', checkHP);
     on('change:campaign:playerpageid', paladinCheck);
   }
 
