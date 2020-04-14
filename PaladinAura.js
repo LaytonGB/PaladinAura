@@ -1,5 +1,5 @@
 const PaladinAura = (function () {
-    const version = '1.0.12';
+    const version = '1.0.13';
     function isActiveValue(val) {
         return ['true', 'false'].includes(val);
     }
@@ -803,6 +803,13 @@ const PaladinAura = (function () {
         }
         log(nameLog + error + ` Error code ${code}.`);
     }
+    function checkHP(attr, prev) {
+        if (attr.get('name').toLowerCase() == 'hp' &&
+            (+attr.get('current') == 0 || +prev.current == 0) &&
+            charIsPaladin(attr.get('_characterid')) != undefined) {
+            paladinCheck();
+        }
+    }
     function startupChecks() {
         checkPaladinAbilities();
         checkStates();
@@ -887,6 +894,7 @@ const PaladinAura = (function () {
     function registerEventHandlers() {
         on('chat:message', handleInput);
         on('change:graphic', paladinCheck);
+        on('change:attribute', checkHP);
         on('change:campaign:playerpageid', paladinCheck);
     }
     return {
