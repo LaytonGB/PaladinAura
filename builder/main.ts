@@ -325,13 +325,16 @@ const PaladinAura = (function() {
     const paladinObjects = getPaladinsFromTokens(playerTokens);
     playerTokens.forEach((t) => {
       let saveBonus: number;
+      const tIsNPC = +getAttr(t.get('represents'), 'npc') == 1;
       paladinObjects.forEach((p) => {
         if (
           t.get('represents') == p.id &&
           getAttr(p.id, 'mancer_confirm').trim() == 'on' &&
-          p.chaBonus == +getAttr(p.id, 'globalsavemod')
+          p.chaBonus == +getAttr(p.id, 'globalsavemod') &&
+          getAttr(p.id, stateName + 'uniq') != '1'
         ) {
           setAttr(p.id, 'paladin_buff', p.chaBonus.toString());
+          setAttr(p.id, stateName + 'uniq', '1');
         }
         const distLimit = (p.radius / unitsPerSquare) * pixelsPerSquare;
         const tokenSizeAdjust =
@@ -345,7 +348,10 @@ const PaladinAura = (function() {
           xDist >= yDist ? distCalc(xDist, yDist) : distCalc(yDist, xDist);
         if (
           distTotal <= distLimit &&
-          getAttr(t.get('represents'), stateName + p.id) != 'false'
+          ((!tIsNPC &&
+            getAttr(t.get('represents'), stateName + p.id).trim() != 'false') ||
+            (tIsNPC &&
+              getAttr(t.get('represents'), stateName + p.id).trim() == 'true'))
         ) {
           saveBonus = saveBonus >= p.chaBonus ? saveBonus : p.chaBonus;
         } else {
@@ -486,23 +492,24 @@ const PaladinAura = (function() {
             }
           }
           // if token is to be kept, replace the class attr with the level attr
-          // else, remove from array
           if (keep) {
             attrs[i] = levelAttr;
-          } else {
-            attrs.splice(i, 1);
           }
           return keep;
         })
         // filter out any token that is at or below 0 hit points
         .filter((t, i) => {
-          const conscious = +getAttr(t.get('represents'), 'hp') > 0;
+          const conscious =
+            +getAttr(t.get('represents'), 'hp') > 0
+              ? true
+              : +getAttr(t.get('represents'), 'HP') > 0;
           // if unconscious remove from array
           if (!conscious) {
             attrs.splice(i, 1);
           }
           return conscious;
         })
+        // map tokens to output format
         .map((t, i) => {
           return {
             chaBonus: Math.max(
@@ -533,9 +540,7 @@ const PaladinAura = (function() {
       'multiclass2',
       'multiclass3'
     ].find((a) => {
-      return getAttr(charID, a)
-        .toLowerCase()
-        .includes('paladin');
+      return getAttr(charID, a).search(/paladin/i) != -1;
     });
     if (classAttr == undefined) {
       return;
@@ -544,9 +549,7 @@ const PaladinAura = (function() {
       case 'class':
         levelAttr = 'base_level';
         break;
-      case 'multiclass1':
-      case 'multiclass2':
-      case 'multiclass3':
+      default:
         levelAttr = classAttr + '_lvl';
         break;
     }
