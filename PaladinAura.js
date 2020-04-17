@@ -832,7 +832,7 @@ const PaladinAura = (function () {
             return +getAttr(c.id, 'npc') != 1;
         });
         const paladins = allChars.filter((c) => {
-            return charIsPaladin(c.id) == undefined;
+            return charIsPaladin(c.id) != undefined;
         });
         let configChanged = false;
         paladins.forEach((p) => {
