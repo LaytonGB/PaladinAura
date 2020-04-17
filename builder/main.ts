@@ -1,10 +1,14 @@
 const PaladinAura = (function() {
   const version = '1.0.14';
 
-  type StateVar = 'active' | 'diagonal_calc_override' | 'status_marker';
+  type StateVar = 'active' | 'sheet_type' | 'diagonal_calc_override' | 'status_marker';
   type ActiveValues = 'true' | 'false';
-  function isActiveValue(val: string): boolean {
+  function isActiveValue(val: string): val is ActiveValues {
     return ['true', 'false'].includes(val);
+  }
+  type SheetTypeValues = '5e Roll20' | '5e Shaped';
+  function isSheetTypeValue(val: string): val is SheetTypeValues {
+    return ['5e Roll20', '5e Shaped'].includes(val);
   }
   type DiagonalCalcValues =
     | 'none'
@@ -12,13 +16,13 @@ const PaladinAura = (function() {
     | 'threefive'
     | 'pythagorean'
     | 'manhattan';
-  function isDiagonalCalcValue(val: string): boolean {
+  function isDiagonalCalcValue(val: string): val is DiagonalCalcValues {
     return ['none', 'foure', 'threefive', 'pythagorean', 'manhattan'].includes(
       val
     );
   }
   type StatusMarkerValues = string;
-  function isStatusMarkerValue(val: string): boolean {
+  function isStatusMarkerValue(val: string): val is StatusMarkerValues {
     return val.slice(0, 6) == 'status';
   }
 
@@ -892,6 +896,9 @@ const PaladinAura = (function() {
     switch (targetState) {
       case 'active':
         valid = isActiveValue(newValue);
+        break;
+      case 'sheet_type':
+        valid = isSheetTypeValue(newValue);
         break;
       case 'diagonal_calc_override':
         valid = isDiagonalCalcValue(newValue);
