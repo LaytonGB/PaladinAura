@@ -67,6 +67,9 @@ There are only two settings that can be configured (currently).
 
 ## Changelog
 
+1.0.14
+- Fixed an issue with the ToggleAuraTarget paladin ability being given to all non-paladin characters.
+
 1.0.13
 - Code auto-runs when any character's HP is changed to or from 0.
 - Minor bugs fixed to do with NPCs receiving buff.
