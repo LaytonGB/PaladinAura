@@ -339,9 +339,11 @@ const PaladinAura = (function() {
           getState('sheet_type') == '5e Roll20' &&
           !tIsNPC &&
           t.get('represents') == p.id &&
-          getAttr(p.id, 'mancer_confirm').trim() == 'on' &&
+          getAttr(p.id, 'mancer_confirm')
+            .get('current')
+            .trim() == 'on' &&
           p.chaBonus == +getAttr(p.id, 'globalsavemod') &&
-          getAttr(p.id, stateName + 'uniq') != '1'
+          getAttr(p.id, stateName + 'uniq').get('current') != '1'
         ) {
           setAttr(p.id, 'paladin_buff', p.chaBonus.toString());
           setAttr(p.id, stateName + 'uniq', '1');
@@ -359,9 +361,13 @@ const PaladinAura = (function() {
         if (
           distTotal <= distLimit &&
           ((!tIsNPC &&
-            getAttr(t.get('represents'), stateName + p.id).trim() != 'false') ||
+            getAttr(t.get('represents'), stateName + p.id)
+              .get('current')
+              .trim() != 'false') ||
             (tIsNPC &&
-              getAttr(t.get('represents'), stateName + p.id).trim() == 'true'))
+              getAttr(t.get('represents'), stateName + p.id)
+                .get('current')
+                .trim() == 'true'))
         ) {
           saveBonus = saveBonus >= p.chaBonus ? saveBonus : p.chaBonus;
         } else {
@@ -463,19 +469,20 @@ const PaladinAura = (function() {
       _pageid: Campaign().get('playerpageid'),
       layer: 'objects'
     }) as Graphic[];
-    if (getState('sheet_type') == '5e Roll20') {
-      return allTokens.filter((token) => {
-        const charID = token.get('represents');
-        const char = getObj('character', charID);
-        const isNPC = +getAttr(charID, 'npc') == 1;
-        const hasUniqAttr = +getAttr(charID, stateName + 'uniq') == 1;
-        // return any token that has a character and
-        // is not NPC or has custom attr
-        return char != undefined && (!isNPC || hasUniqAttr);
-      });
-    } else if (getState('sheet_type') == '5e Shaped') {
-      // TODO
-    }
+    return allTokens.filter((token) => {
+      const charID = token.get('represents');
+      const char = getObj('character', charID);
+      const hasUniqAttr = +getAttr(charID, stateName + 'uniq') == 1;
+      let isNPC: boolean;
+      // return any token that has a character and
+      // is not NPC or has custom attr
+      if (getState('sheet_type') == '5e Roll20') {
+        isNPC = +getAttr(charID, 'npc') == 1;
+      } else if (getState('sheet_type') == '5e Shaped') {
+        isNPC = +getAttr(charID, 'is_npc') == 1;
+      }
+      return char != undefined && (!isNPC || hasUniqAttr);
+    });
   }
 
   /**
@@ -490,60 +497,56 @@ const PaladinAura = (function() {
     ignoreLevel?: boolean
   ): PaladinObject[] {
     const attrs: string[] = [];
-    if (getState('sheet_type') == '5e Roll20') {
-      return (
-        tokens
-          // filter out any token which has no paladin class
-          // or that is below 6th level
-          .filter((t, i) => {
-            let keep: boolean;
-            const levelAttr = charIsPaladin(t.get('represents'));
-            if (levelAttr == undefined) {
-              keep = false;
+    return (
+      tokens
+        // filter out any token which has no paladin class
+        // or that is below 6th level
+        .filter((t, i) => {
+          let keep: boolean;
+          const levelAttr = charIsPaladin(t.get('represents'));
+          if (levelAttr == undefined) {
+            keep = false;
+          } else {
+            if (ignoreLevel) {
+              keep = true;
             } else {
-              if (ignoreLevel) {
-                keep = true;
-              } else {
-                keep = +getAttr(t.get('represents'), levelAttr) >= 6;
-              }
+              keep = +getAttr(t.get('represents'), levelAttr) >= 6;
             }
-            // if token is to be kept, replace the class attr with the level attr
-            if (keep) {
-              attrs[i] = levelAttr;
-            }
-            return keep;
-          })
-          // filter out any token that is at or below 0 hit points
-          .filter((t, i) => {
-            const conscious =
-              +getAttr(t.get('represents'), 'hp') > 0
-                ? true
-                : +getAttr(t.get('represents'), 'HP') > 0;
-            // if unconscious remove from array
-            if (!conscious) {
-              attrs.splice(i, 1);
-            }
-            return conscious;
-          })
-          // map tokens to output format
-          .map((t, i) => {
-            return {
-              chaBonus: Math.max(
-                +getAttr(t.get('represents'), 'charisma_mod'),
-                1
-              ),
-              id: t.get('represents'),
-              left: +t.get('left'),
-              level: +getAttr(t.get('represents'), attrs[i]),
-              radius: +getAttr(t.get('represents'), attrs[i]) >= 18 ? 30 : 10,
-              token: t,
-              top: +t.get('top')
-            };
-          })
-      );
-    } else if (getState('sheet_type') == '5e Shaped') {
-      // TODO
-    }
+          }
+          // if token is to be kept, add its level attribute name to attrs array
+          if (keep) {
+            attrs[i] = levelAttr;
+          }
+          return keep;
+        })
+        // filter out any token that is at or below 0 hit points
+        .filter((t, i) => {
+          const conscious =
+            +getAttr(t.get('represents'), 'hp') > 0
+              ? true
+              : +getAttr(t.get('represents'), 'HP') > 0;
+          // if unconscious remove from array
+          if (!conscious) {
+            attrs.splice(i, 1);
+          }
+          return conscious;
+        })
+        // map tokens to output format
+        .map((t, i) => {
+          return {
+            chaBonus: Math.max(
+              +getAttr(t.get('represents'), 'charisma_mod'),
+              1
+            ),
+            id: t.get('represents'),
+            left: +t.get('left'),
+            level: +getAttr(t.get('represents'), attrs[i]),
+            radius: +getAttr(t.get('represents'), attrs[i]) >= 18 ? 30 : 10,
+            token: t,
+            top: +t.get('top')
+          };
+        })
+    );
   }
 
   /**
@@ -552,7 +555,6 @@ const PaladinAura = (function() {
    * @param charID A character ID.
    */
   function charIsPaladin(charID: string): string | undefined {
-    let levelAttr: string;
     if (getState('sheet_type') == '5e Roll20') {
       const classAttr = [
         'class',
@@ -560,23 +562,26 @@ const PaladinAura = (function() {
         'multiclass2',
         'multiclass3'
       ].find((a) => {
-        return getAttr(charID, a).search(/paladin/i) != -1;
+        return (
+          getAttr(charID, a)
+            .get('current')
+            .search(/paladin/i) != -1
+        );
       });
       if (classAttr == undefined) {
         return;
       }
       switch (classAttr) {
         case 'class':
-          levelAttr = 'base_level';
-          break;
+          return 'base_level';
         default:
-          levelAttr = classAttr + '_lvl';
-          break;
+          return classAttr + '_lvl';
       }
     } else if (getState('sheet_type') == '5e Shaped') {
-      // TODO
+      if (+getAttr(charID, 'has_paladin_levels') == 1) {
+        return 'paladin_level';
+      }
     }
-    return levelAttr;
   }
 
   /**
@@ -594,41 +599,31 @@ const PaladinAura = (function() {
     if (getState('sheet_type') == '5e Roll20') {
       if (isNPC) {
         const shortAttrName = attrName.slice(0, 3);
-        let attrMod = findObjs({
+        const attrMod = findObjs({
           _type: 'attribute',
           _characterid: charID,
           name: attrName + '_mod'
         })[0] as Attribute;
-        const NPCattrs = (findObjs({
-          _type: 'attribute',
-          _characterid: charID
-        }) as Attribute[]).filter((a) => {
-          return a.get('name').includes('npc_' + shortAttrName + '_');
-        });
-        let saveFlagAttr = NPCattrs.find((a) => {
-          return a.get('name') == 'npc_' + shortAttrName + '_save_flag';
-        });
-        let saveBonusAttr = NPCattrs.find((a) => {
-          return a.get('name') == 'npc_' + shortAttrName + '_save';
-        });
+        const saveFlagAttr = setAttr(
+          charID,
+          'npc_' + shortAttrName + '_save_flag',
+          '0',
+          true
+        );
+        const saveBonusAttr = setAttr(
+          charID,
+          'npc_' + shortAttrName + '_save',
+          attrMod.get('current'),
+          true
+        );
 
-        if (attrMod == undefined) {
-          attrMod = createAttr(attrName);
-        }
-        if (saveFlagAttr == undefined) {
-          saveFlagAttr = createAttr('npc_' + shortAttrName + '_save_flag');
-        }
-        if (saveBonusAttr == undefined) {
-          saveBonusAttr = createAttr('npc_' + shortAttrName + '_save');
-        }
-
+        let adjust: number;
         if (+saveFlagAttr.get('current') == 2) {
-          const adjust = +saveBonusAttr.get('current') + value;
-          saveBonusAttr.setWithWorker('current', adjust.toString());
+          adjust = +saveBonusAttr.get('current') + value;
         } else {
-          const adjust = +attrMod.get('current') + value;
-          saveBonusAttr.setWithWorker('current', adjust.toString());
+          adjust = +attrMod.get('current') + value;
         }
+        saveBonusAttr.setWithWorker('current', adjust.toString());
 
         if (+saveBonusAttr.get('current') == +attrMod.get('current')) {
           saveFlagAttr.setWithWorker('current', '0');
@@ -636,34 +631,13 @@ const PaladinAura = (function() {
           saveFlagAttr.setWithWorker('current', '2');
         }
       } else {
-        let attr = findObjs({
-          _type: 'attribute',
-          _characterid: charID,
-          name: attrName
-        })[0] as Attribute;
-        if (!attr) {
-          attr = createObj('attribute', {
-            _characterid: charID,
-            name: attrName
-          });
-          attr.setWithWorker('current', value.toString());
-        } else {
-          const attrValue = attr.get('current');
-          const adjust = +attrValue + +value;
-          attr.setWithWorker('current', adjust.toString());
-        }
+        const attr = setAttr(charID, name, '0', true);
+        const attrValue = attr.get('current');
+        const adjust = +attrValue + +value;
+        attr.setWithWorker('current', adjust.toString());
       }
     } else if (getState('sheet_type') == '5e Shaped') {
       // TODO
-    }
-
-    function createAttr(name: string, value?: string): Attribute {
-      const output = createObj('attribute', {
-        _characterid: charID,
-        name: name
-      });
-      output.setWithWorker('current', value || '0');
-      return output;
     }
   }
 
@@ -882,31 +856,55 @@ const PaladinAura = (function() {
     );
   }
 
-  function getAttr(charID: string, name: string): string {
+  /**
+   * @param charID A character ID string.
+   * @param name The attribute name.
+   * @returns The attribute if found, else undefined.
+   */
+  function getAttr(charID: string, name: string): Attribute | undefined {
     const attrs = findObjs({
       _type: 'attribute',
       _characterid: charID,
       name: name
     }) as Attribute[];
     if (attrs.length > 0) {
-      return attrs[0].get('current');
+      return attrs[0];
     }
-    return 'undefined';
+    return;
   }
 
-  function setAttr(charID: string, name: string, value: string): Attribute {
-    let attr = findObjs({
-      _type: 'attribute',
-      _characterid: charID,
-      name: name
-    })[0] as Attribute;
+  /**
+   * Find the attribute and sets its 'current' value. If the attribute
+   * cannot be found it is instead created.
+   * @param charID A character ID string.
+   * @param name The attribute name.
+   * @param value The value to set the attribute to.
+   * @param dontOverwrite If true, the attribute's current value will not be overwritten,
+   * unless the attribute was newly created.
+   * @returns The attribute after the change.
+   */
+  function setAttr(
+    charID: string,
+    name: string,
+    value?: string,
+    dontOverwrite?: boolean
+  ): Attribute {
+    let attr = getAttr(charID, name);
+    let goingToOverwrite: boolean;
     if (attr == undefined) {
+      goingToOverwrite = false;
       attr = createObj('attribute', {
         _characterid: charID,
         name: name
       });
     }
-    attr.setWithWorker('current', value);
+    if (
+      value != undefined &&
+      // so long as dontOverwrite and goingToOverwrite are not both true
+      !(dontOverwrite == true || goingToOverwrite != false)
+    ) {
+      attr.setWithWorker('current', value);
+    }
     return attr;
   }
 
