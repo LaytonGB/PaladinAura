@@ -1,5 +1,5 @@
 const PaladinAura = (function () {
-    const version = '1.0.13';
+    const version = '1.0.14';
     function isActiveValue(val) {
         return ['true', 'false'].includes(val);
     }
@@ -832,7 +832,7 @@ const PaladinAura = (function () {
             return +getAttr(c.id, 'npc') != 1;
         });
         const paladins = allChars.filter((c) => {
-            return charIsPaladin(c.id) == undefined;
+            return charIsPaladin(c.id) != undefined;
         });
         let configChanged = false;
         paladins.forEach((p) => {
