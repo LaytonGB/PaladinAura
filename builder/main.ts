@@ -333,7 +333,10 @@ const PaladinAura = (function() {
     const paladinObjects = getPaladinsFromTokens(playerTokens);
     playerTokens.forEach((t) => {
       let saveBonus: number;
-      const tIsNPC = +getAttr(t.get('represents'), 'npc') == 1;
+      const tIsNPC =
+        getState('sheet_type') == '5e Roll20' ?
+          +getAttr(t.get('represents'), 'npc') == 1
+          : +getAttr(t.get('represents'), 'is_npc') == 1;
       paladinObjects.forEach((p) => {
         if (
           getState('sheet_type') == '5e Roll20' &&
@@ -375,7 +378,7 @@ const PaladinAura = (function() {
         }
       });
       saveBonus = saveBonus ? saveBonus : 0;
-      setBuff(t, saveBonus);
+      setBuff(t, saveBonus, tIsNPC);
     });
 
     function distCalc(distA: number, distB: number) {
@@ -412,47 +415,40 @@ const PaladinAura = (function() {
    * @param token The target token.
    * @param value The new value to set the paladin bonus to.
    */
-  function setBuff(token: Graphic, value: number) {
+  function setBuff(token: Graphic, value: number, isNPC: boolean) {
     setMarker(token, value);
     const charID = token.get('represents');
     const char = getObj('character', charID);
-    if (!char) {
+    if (char == undefined) {
       error(
         `Player Character '${token.get('name')}' had no character sheet.`,
         2
       );
       return;
     } else {
-      let attr = findObjs({
-        _type: 'attribute',
-        _characterid: charID,
-        name: 'paladin_buff'
-      })[0] as Attribute;
-      if (!attr) {
-        attr = createObj('attribute', {
-          _characterid: charID,
-          name: 'paladin_buff',
-          current: '0'
-        });
-      }
+      const attr = setAttr(charID, 'paladin_buff', '0', true);
       const attrValue = attr.get('current');
       if (+value != +attrValue) {
         const adjust = +value - +attrValue;
         attr.setWithWorker('current', value.toString());
-        if (+getAttr(charID, 'npc') != 1) {
-          modAttr(token.get('represents'), 'globalsavemod', adjust);
-        } else {
-          [
-            'strength',
-            'dexterity',
-            'constitution',
-            'intelligence',
-            'wisdom',
-            'charisma'
-          ].forEach((abilityName) => {
-            modAttr(token.get('represents'), abilityName, adjust, true);
-          });
-          checkNPCsaveSection(charID);
+        if (getState('sheet_type') == '5e Roll20') {
+          if (!isNPC) {
+            modAttr(charID, 'globalsavemod', adjust);
+          } else {
+            [
+              'strength',
+              'dexterity',
+              'constitution',
+              'intelligence',
+              'wisdom',
+              'charisma'
+            ].forEach((abilityName) => {
+              modAttr(charID, abilityName, adjust, true);
+            });
+            checkNPCsaveSection(charID);
+          }
+        } else if (getState('sheet_type') == '5e Shaped') {
+          modAttr(charID, '', adjust, isNPC);
         }
       }
     }
@@ -631,7 +627,7 @@ const PaladinAura = (function() {
           saveFlagAttr.setWithWorker('current', '2');
         }
       } else {
-        const attr = setAttr(charID, name, '0', true);
+        const attr = setAttr(charID, attrName, '0', true);
         const attrValue = attr.get('current');
         const adjust = +attrValue + +value;
         attr.setWithWorker('current', adjust.toString());
@@ -908,7 +904,10 @@ const PaladinAura = (function() {
     return attr;
   }
 
-  function getState(value: StateVar): string {
+  // can also return a string in the case of "status_marker" StateVar, but is never checked by code
+  function getState(
+    value: StateVar
+  ): ActiveValue | SheetTypeValue | DiagonalCalcValue {
     return state[stateName + value];
   }
 
