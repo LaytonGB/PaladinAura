@@ -864,8 +864,8 @@ const PaladinAura = (function () {
         }
     }
     function startupChecks() {
-        checkPaladinAbilities();
         checkStates();
+        checkPaladinAbilities();
     }
     /**
      * Finds all paladin characters and checks their abilities.

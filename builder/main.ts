@@ -1068,8 +1068,8 @@ const PaladinAura = (function() {
   }
 
   function startupChecks() {
-    checkPaladinAbilities();
     checkStates();
+    checkPaladinAbilities();
   }
 
   /**
