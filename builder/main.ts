@@ -594,7 +594,12 @@ const PaladinAura = (function() {
     isNPC?: boolean
   ) {
     if (getState('sheet_type') == '5e Roll20') {
-      if (isNPC) {
+      if (!isNPC) {
+        const attr = setAttr(charID, attrName, '0', true);
+        const attrValue = attr.get('current');
+        const adjust = +attrValue + +value;
+        attr.setWithWorker('current', adjust.toString());
+      } else {
         const shortAttrName = attrName.slice(0, 3);
         const attrMod = findObjs({
           _type: 'attribute',
@@ -627,11 +632,6 @@ const PaladinAura = (function() {
         } else {
           saveFlagAttr.setWithWorker('current', '2');
         }
-      } else {
-        const attr = setAttr(charID, attrName, '0', true);
-        const attrValue = attr.get('current');
-        const adjust = +attrValue + +value;
-        attr.setWithWorker('current', adjust.toString());
       }
     } else if (getState('sheet_type') == '5e Shaped') {
       // TODO
