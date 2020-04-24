@@ -81,6 +81,11 @@ const PaladinAura = (function() {
       hide: 'true'
     },
     {
+      name: 'sheet_type',
+      acceptables: ['5e Roll20', '5e Shaped'],
+      default: '5e Roll20'
+    },
+    {
       name: 'diagonal_calc_override',
       acceptables: ['none', 'foure', 'threefive', 'pythagorean', 'manhattan'],
       default: 'none'
