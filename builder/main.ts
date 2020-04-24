@@ -575,9 +575,16 @@ const PaladinAura = (function() {
 
   function charIsNPC(charID: string): boolean {
     switch (getState('sheet_type')) {
-      case '5e Roll20': return +getAttr(charID, 'npc') == 1;
-      case '5e Shaped': return +getAttr(charID, 'is_npc') == 1;
-      default: error('Sheet type incorrectly defined. If the issue persists try Reset All in config.', 99); return;
+      case '5e Roll20':
+        return +getAttr(charID, 'npc') == 1;
+      case '5e Shaped':
+        return +getAttr(charID, 'is_npc') == 1;
+      default:
+        error(
+          'Sheet type incorrectly defined. If the issue persists try Reset All in config.',
+          99
+        );
+        return;
     }
   }
 
@@ -596,9 +603,8 @@ const PaladinAura = (function() {
     if (getState('sheet_type') == '5e Roll20') {
       if (!isNPC) {
         const attr = setAttr(charID, attrName, '0', true);
-        const attrValue = attr.get('current');
-        const adjust = +attrValue + +value;
-        attr.setWithWorker('current', adjust.toString());
+        const attrVal = +attr.get('current');
+        attr.setWithWorker('current', (attrVal + value).toString());
       } else {
         const shortAttrName = attrName.slice(0, 3);
         const attrMod = findObjs({
@@ -634,7 +640,37 @@ const PaladinAura = (function() {
         }
       }
     } else if (getState('sheet_type') == '5e Shaped') {
-      // TODO
+      if (!isNPC) {
+        const repModPrefix = 'repeating_modifier_';
+        const modifierObj = {
+          idAttr: setAttr(charID, stateName + 'repID', generateRowID(), true),
+          id: this.idAttr.get('current'), //* Might cause issues
+          name: setAttr(
+            charID,
+            repModPrefix + this.id + 'name',
+            'Paladin Aura Save Bonus',
+            true
+          ),
+          savingthrowtoggle: setAttr(
+            charID,
+            repModPrefix + this.id + 'savingthrowtoggle',
+            '1',
+            true
+          ),
+          savingthrowmodifier: setAttr(
+            charID,
+            repModPrefix + this.id + 'savingthrowmodifier',
+            '0',
+            true
+          )
+        };
+        // set the save modifier to accurate value
+        const attrVal = +modifierObj.savingthrowmodifier.get('current');
+        modifierObj.savingthrowmodifier.setWithWorker(
+          'current',
+          (attrVal + value).toString()
+        );
+      }
     }
   }
 
@@ -940,6 +976,44 @@ const PaladinAura = (function() {
         -2
       );
     }
+  }
+
+  // From ChatSetAttr
+  function generateRowID() {
+    function generateUUID() {
+      var a = 0,
+        b = [],
+        g: string;
+      var c = new Date().getTime() + 0,
+        d = c === a;
+      a = c;
+      for (var e = new Array(8), f = 7; 0 <= f; f--) {
+        e[
+          f
+        ] = '-0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz'.charAt(
+          c % 64
+        );
+        c = Math.floor(c / 64);
+      }
+      g = e.join('');
+      if (d) {
+        for (f = 11; 0 <= f && 63 === b[f]; f--) {
+          b[f] = 0;
+        }
+        b[f]++;
+      } else {
+        for (f = 0; 12 > f; f++) {
+          b[f] = Math.floor(64 * Math.random());
+        }
+      }
+      for (f = 0; 12 > f; f++) {
+        g += '-0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz'.charAt(
+          b[f]
+        );
+      }
+      return g;
+    }
+    return generateUUID().replace(/_/g, 'Z');
   }
 
   function code(snippet: string) {
