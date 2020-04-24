@@ -4,7 +4,7 @@ const PaladinAura = (function () {
         return ['true', 'false'].includes(val);
     }
     function isSheetTypeValue(val) {
-        return ['5e Roll20', '5e Shaped'].includes(val);
+        return ['Roll20-OGL', 'Shaped'].includes(val);
     }
     function isDiagonalCalcValue(val) {
         return ['none', 'foure', 'threefive', 'pythagorean', 'manhattan'].includes(val);
@@ -20,8 +20,8 @@ const PaladinAura = (function () {
         },
         {
             name: 'sheet_type',
-            acceptables: ['5e Roll20', '5e Shaped'],
-            default: '5e Roll20'
+            acceptables: ['Roll20-OGL', 'Shaped'],
+            default: 'Roll20-OGL'
         },
         {
             name: 'diagonal_calc_override',
@@ -258,7 +258,7 @@ const PaladinAura = (function () {
             let saveBonus;
             const tIsNPC = charIsNPC(t.get('represents'));
             paladinObjects.forEach((p) => {
-                if (getState('sheet_type') == '5e Roll20' &&
+                if (getState('sheet_type') == 'Roll20-OGL' &&
                     !tIsNPC &&
                     t.get('represents') == p.id &&
                     getAttr(p.id, 'mancer_confirm')
@@ -335,7 +335,7 @@ const PaladinAura = (function () {
         if (+value != +attrValue) {
             const adjust = +value - +attrValue;
             attr.setWithWorker('current', value.toString());
-            if (getState('sheet_type') == '5e Roll20') {
+            if (getState('sheet_type') == 'Roll20-OGL') {
                 if (!isNPC) {
                     modAttr(charID, 'globalsavemod', adjust);
                 }
@@ -353,7 +353,7 @@ const PaladinAura = (function () {
                     checkNPCsaveSection(charID);
                 }
             }
-            else if (getState('sheet_type') == '5e Shaped') {
+            else if (getState('sheet_type') == 'Shaped') {
                 modAttr(charID, '', adjust, isNPC);
             }
         }
@@ -440,16 +440,18 @@ const PaladinAura = (function () {
      * @param charID A character ID.
      */
     function charIsPaladin(charID) {
-        if (getState('sheet_type') == '5e Roll20') {
+        if (getState('sheet_type') == 'Roll20-OGL') {
             const classAttr = [
                 'class',
                 'multiclass1',
                 'multiclass2',
                 'multiclass3'
             ].find((a) => {
-                return (getAttr(charID, a)
-                    .get('current')
-                    .search(/paladin/i) != -1);
+                const attr = getAttr(charID, a);
+                if (attr == undefined) {
+                    return false;
+                }
+                return attr.get('current').search(/paladin/i) != -1;
             });
             if (classAttr == undefined) {
                 return;
@@ -461,7 +463,7 @@ const PaladinAura = (function () {
                     return classAttr + '_lvl';
             }
         }
-        else if (getState('sheet_type') == '5e Shaped') {
+        else if (getState('sheet_type') == 'Shaped') {
             if (+getAttr(charID, 'has_paladin_levels') == 1) {
                 return 'paladin_level';
             }
@@ -469,9 +471,9 @@ const PaladinAura = (function () {
     }
     function charIsNPC(charID) {
         switch (getState('sheet_type')) {
-            case '5e Roll20':
+            case 'Roll20-OGL':
                 return +getAttr(charID, 'npc') == 1;
-            case '5e Shaped':
+            case 'Shaped':
                 return +getAttr(charID, 'is_npc') == 1;
             default:
                 error('Sheet type incorrectly defined. If the issue persists try Reset All in config.', 99);
@@ -485,7 +487,7 @@ const PaladinAura = (function () {
      * @param isNPC Token character is an NPC.
      */
     function modAttr(charID, attrName, value, isNPC) {
-        if (getState('sheet_type') == '5e Roll20') {
+        if (getState('sheet_type') == 'Roll20-OGL') {
             if (!isNPC) {
                 const attr = setAttr(charID, attrName, '0', true);
                 const attrVal = +attr.get('current');
@@ -516,7 +518,7 @@ const PaladinAura = (function () {
                 }
             }
         }
-        else if (getState('sheet_type') == '5e Shaped') {
+        else if (getState('sheet_type') == 'Shaped') {
             if (!isNPC) {
                 const repModPrefix = 'repeating_modifier_';
                 const modifierObj = {
