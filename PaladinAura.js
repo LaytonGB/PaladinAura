@@ -250,6 +250,8 @@ const PaladinAura = (function () {
         if (page.get('scale_units') != 'ft') {
             return;
         } // stops here if the page is not measured in feet
+        // ! DEBUG
+        toChat('PaladinCheck');
         const unitsPerSquare = page.get('scale_number');
         const pixelsPerSquare = page.get('snapping_increment') * 70;
         const playerTokens = getPlayerTokens();
@@ -363,6 +365,8 @@ const PaladinAura = (function () {
      * non-npc character sheets.
      */
     function getPlayerTokens() {
+        // ! DEBUG
+        toChat('getPlayerTokens');
         const allTokens = findObjs({
             _type: 'graphic',
             _subtype: 'token',
@@ -386,6 +390,8 @@ const PaladinAura = (function () {
      * level of the tokens in their paladin calculation.
      */
     function getPaladinsFromTokens(tokens, ignoreLevel) {
+        // ! DEBUG
+        toChat('getPaladinsFromTokens');
         const attrs = [];
         return (tokens
             // filter out any token which has no paladin class
@@ -464,7 +470,8 @@ const PaladinAura = (function () {
             }
         }
         else if (getState('sheet_type') == 'Shaped') {
-            if (+getAttr(charID, 'has_paladin_levels') == 1) {
+            const attr = getAttr(charID, 'has_paladin_levels');
+            if (attr != undefined && +attr.get('current') == 1) {
                 return 'paladin_level';
             }
         }
