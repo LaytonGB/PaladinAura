@@ -349,7 +349,7 @@ const PaladinAura = (function() {
           getAttr(p.id, 'mancer_confirm')
             .get('current')
             .trim() == 'on' &&
-          p.chaBonus == +getAttr(p.id, 'globalsavemod') &&
+          p.chaBonus == +getAttr(p.id, 'globalsavemod').get('current') &&
           getAttr(p.id, stateName + 'uniq').get('current') != '1'
         ) {
           setAttr(p.id, 'paladin_buff', p.chaBonus.toString());
@@ -476,7 +476,9 @@ const PaladinAura = (function() {
     return allTokens.filter((token) => {
       const charID = token.get('represents');
       const char = getObj('character', charID);
-      const hasUniqAttr = +getAttr(charID, stateName + 'uniq') == 1;
+      const uniqAttr = getAttr(charID, stateName + 'uniq');
+      const hasUniqAttr =
+        uniqAttr != undefined && +uniqAttr.get('current') == 1;
       // return any token that has a character and
       // is not NPC or has custom attr
       return char != undefined && (!charIsNPC(charID) || hasUniqAttr);
@@ -521,27 +523,32 @@ const PaladinAura = (function() {
         })
         // filter out any token that is at or below 0 hit points
         .filter((t, i) => {
-          const conscious =
-            +getAttr(t.get('represents'), 'hp') > 0
-              ? true
-              : +getAttr(t.get('represents'), 'HP') > 0;
+          let conscious = getAttr(t.get('represents'), 'hp');
+          if (conscious == undefined) {
+            conscious = getAttr(t.get('represents'), 'HP');
+          }
+          const isConscious =
+            conscious != undefined && +conscious.get('current') > 0;
           // if unconscious remove from array
           if (!conscious) {
             attrs.splice(i, 1);
           }
-          return conscious;
+          return isConscious;
         })
         // map tokens to output format
         .map((t, i) => {
           return {
             chaBonus: Math.max(
-              +getAttr(t.get('represents'), 'charisma_mod'),
+              +getAttr(t.get('represents'), 'charisma_mod').get('current'),
               1
             ),
             id: t.get('represents'),
             left: +t.get('left'),
-            level: +getAttr(t.get('represents'), attrs[i]),
-            radius: +getAttr(t.get('represents'), attrs[i]) >= 18 ? 30 : 10,
+            level: +getAttr(t.get('represents'), attrs[i]).get('current'),
+            radius:
+              +getAttr(t.get('represents'), attrs[i]).get('current') >= 18
+                ? 30
+                : 10,
             token: t,
             top: +t.get('top')
           };
@@ -586,18 +593,19 @@ const PaladinAura = (function() {
   }
 
   function charIsNPC(charID: string): boolean {
+    let attr: Attribute;
     switch (getState('sheet_type')) {
       case 'Roll20-OGL':
-        return +getAttr(charID, 'npc') == 1;
+        attr = getAttr(charID, 'npc');
+        break;
       case 'Shaped':
-        return +getAttr(charID, 'is_npc') == 1;
-      default:
-        error(
-          'Sheet type incorrectly defined. If the issue persists try Reset All in config.',
-          99
-        );
-        return;
+        attr = getAttr(charID, 'is_npc');
+        break;
     }
+    if (attr == undefined) {
+      return false;
+    }
+    return +attr.get('current') == 1;
   }
 
   /**
