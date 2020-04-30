@@ -333,11 +333,35 @@ const PaladinAura = (function() {
       return;
     } // stops here if the page is not measured in feet
     // ! DEBUG
-    toChat('PaladinCheck');
+    toChat('**PaladinCheck**', true);
     const unitsPerSquare = page.get('scale_number');
     const pixelsPerSquare = page.get('snapping_increment') * 70;
     const playerTokens = getPlayerTokens();
+    // ! DEBUG
+    toChat(
+      '**Player Tokens:**<br>' +
+        playerTokens
+          .map((p) => {
+            return p.get('name');
+          })
+          .reduce((lp, np, i) => {
+            return i > 0 ? lp + ',<br>' + np : np;
+          }, ''),
+      false
+    );
     const paladinObjects = getPaladinsFromTokens(playerTokens);
+    // ! DEBUG
+    toChat(
+      '**Paladins:**<br>' +
+        paladinObjects
+          .map((p) => {
+            return '**' + p.token.get('name') + '** ' + p.chaBonus.toString();
+          })
+          .reduce((lp, np, i) => {
+            return i > 0 ? lp + ',<br>' + np : np;
+          }, ''),
+      false
+    );
     playerTokens.forEach((t) => {
       let saveBonus: number;
       const tIsNPC = charIsNPC(t.get('represents'));
@@ -345,15 +369,18 @@ const PaladinAura = (function() {
         if (
           getState('sheet_type') == 'Roll20-OGL' &&
           !tIsNPC &&
-          t.get('represents') == p.id &&
-          getAttr(p.id, 'mancer_confirm')
-            .get('current')
-            .trim() == 'on' &&
-          p.chaBonus == +getAttr(p.id, 'globalsavemod').get('current') &&
-          getAttr(p.id, stateName + 'uniq').get('current') != '1'
+          t.get('represents') == p.id
         ) {
-          setAttr(p.id, 'paladin_buff', p.chaBonus.toString());
-          setAttr(p.id, stateName + 'uniq', '1');
+          if (
+            setAttr(p.id, 'mancer_confirm')
+              .get('current')
+              .trim() == 'on' &&
+            p.chaBonus == +setAttr(p.id, 'globalsavemod').get('current') &&
+            setAttr(p.id, stateName + 'uniq').get('current') != '1'
+          ) {
+            setAttr(p.id, 'paladin_buff', p.chaBonus.toString());
+            setAttr(p.id, stateName + 'uniq', '1');
+          }
         }
         const distLimit = (p.radius / unitsPerSquare) * pixelsPerSquare;
         const tokenSizeAdjust =
@@ -365,16 +392,18 @@ const PaladinAura = (function() {
         const yDist = Math.abs(t.get('top') - p.top) - tokenSizeAdjust;
         const distTotal =
           xDist >= yDist ? distCalc(xDist, yDist) : distCalc(yDist, xDist);
+        const pUniqAttr = getAttr(t.get('represents'), stateName + p.id);
         if (
+          // if within distance and
+          // either not NPC and not excluded
+          // or an NPC and included
           distTotal <= distLimit &&
           ((!tIsNPC &&
-            getAttr(t.get('represents'), stateName + p.id)
-              .get('current')
-              .trim() != 'false') ||
+            (pUniqAttr == undefined ||
+              pUniqAttr.get('current').trim() != 'false')) ||
             (tIsNPC &&
-              getAttr(t.get('represents'), stateName + p.id)
-                .get('current')
-                .trim() == 'true'))
+              pUniqAttr != undefined &&
+              pUniqAttr.get('current').trim() == 'true'))
         ) {
           saveBonus = saveBonus >= p.chaBonus ? saveBonus : p.chaBonus;
         } else {
@@ -422,14 +451,6 @@ const PaladinAura = (function() {
   function setBuff(token: Graphic, value: number, isNPC?: boolean) {
     setMarker(token, value);
     const charID = token.get('represents');
-    const char = getObj('character', charID);
-    if (char == undefined) {
-      error(
-        `Player Character '${token.get('name')}' had no character sheet.`,
-        2
-      );
-      return;
-    }
     if (isNPC == undefined) {
       isNPC = charIsNPC(token.get('represents'));
     }
@@ -503,26 +524,37 @@ const PaladinAura = (function() {
       tokens
         // filter out any token which has no paladin class
         // or that is below 6th level
-        .filter((t, i) => {
+        .filter((t) => {
           let keep: boolean;
           const levelAttr = charIsPaladin(t.get('represents'));
           if (levelAttr == undefined) {
+            // ! DEBUG
+            toChat(t.get('name') + ' **not paladin.**');
             keep = false;
           } else {
+            // ! DEBUG
+            toChat(t.get('name') + ' levelAttr: **' + levelAttr + '**');
             if (ignoreLevel) {
               keep = true;
             } else {
-              keep = +getAttr(t.get('represents'), levelAttr) >= 6;
+              keep =
+                +getAttr(t.get('represents'), levelAttr).get('current') >= 6;
+              // ! DEBUG
+              if (keep == false) {
+                toChat('**but level was too low.**');
+              }
             }
           }
           // if token is to be kept, add its level attribute name to attrs array
           if (keep) {
-            attrs[i] = levelAttr;
+            attrs.push(levelAttr);
           }
           return keep;
         })
         // filter out any token that is at or below 0 hit points
         .filter((t, i) => {
+          // ! DEBUG
+          toChat(t.get('name') + ' got to conscious filter.');
           let conscious = getAttr(t.get('represents'), 'hp');
           if (conscious == undefined) {
             conscious = getAttr(t.get('represents'), 'HP');
@@ -543,14 +575,14 @@ const PaladinAura = (function() {
               1
             ),
             id: t.get('represents'),
-            left: +t.get('left'),
             level: +getAttr(t.get('represents'), attrs[i]).get('current'),
             radius:
               +getAttr(t.get('represents'), attrs[i]).get('current') >= 18
                 ? 30
                 : 10,
             token: t,
-            top: +t.get('top')
+            top: +t.get('top'),
+            left: +t.get('left')
           };
         })
     );
@@ -620,6 +652,8 @@ const PaladinAura = (function() {
     value: number,
     isNPC?: boolean
   ) {
+    // ! DEBUG
+    toChat('modAttr');
     if (getState('sheet_type') == 'Roll20-OGL') {
       if (!isNPC) {
         const attr = setAttr(charID, attrName, '0', true);
@@ -660,36 +694,59 @@ const PaladinAura = (function() {
         }
       }
     } else if (getState('sheet_type') == 'Shaped') {
+      // ! DEBUG
+      toChat('Shaped sheet');
       if (!isNPC) {
+        // ! DEBUG
+        toChat('Not NPC');
         const repModPrefix = 'repeating_modifier_';
-        const modifierObj = {
-          idAttr: setAttr(charID, stateName + 'repID', generateRowID(), true),
-          id: this.idAttr.get('current'), //* Might cause issues
-          name: setAttr(
-            charID,
-            repModPrefix + this.id + 'name',
-            'Paladin Aura Save Bonus',
-            true
-          ),
-          savingthrowtoggle: setAttr(
-            charID,
-            repModPrefix + this.id + 'savingthrowtoggle',
-            '1',
-            true
-          ),
-          savingthrowmodifier: setAttr(
-            charID,
-            repModPrefix + this.id + 'savingthrowmodifier',
-            '0',
-            true
-          )
-        };
-        // set the save modifier to accurate value
-        const attrVal = +modifierObj.savingthrowmodifier.get('current');
-        modifierObj.savingthrowmodifier.setWithWorker(
-          'current',
-          (attrVal + value).toString()
+        let id = setAttr(charID, stateName + 'repID').get('current');
+        if (id.length != 20) {
+          id = generateRowID();
+          setAttr(charID, stateName + 'repID', id);
+        }
+        // ! DEBUG
+        toChat(
+          '**Repeating row ID for ' +
+            getObj('character', charID).get('name') +
+            ':**<br>' +
+            id
         );
+        type repAttr = {
+          name: string;
+          value: string;
+          type: 'set' | 'mod';
+        };
+        const repAttrs: repAttr[] = [
+          {
+            name: 'name',
+            value: 'Paladin Aura Save Bonus',
+            type: 'set'
+          },
+          {
+            name: 'savingthrowtoggle',
+            value: '1',
+            type: 'set'
+          },
+          {
+            name: 'savingthrowmodifier',
+            value: value.toString(),
+            type: 'mod'
+          }
+        ];
+        repAttrs.forEach((a) => {
+          toChat(
+            '!' +
+              a.type +
+              'attr --fbpublic --' +
+              repModPrefix +
+              id +
+              '_' +
+              a.name +
+              '|' +
+              a.value
+          );
+        });
       }
     }
   }
@@ -944,7 +1001,7 @@ const PaladinAura = (function() {
   ): Attribute {
     let attr = getAttr(charID, name);
     let goingToOverwrite: boolean;
-    if (attr == undefined) {
+    if (attr == undefined || attr.get('current').trim() == '') {
       goingToOverwrite = false;
       attr = createObj('attribute', {
         _characterid: charID,
@@ -953,8 +1010,8 @@ const PaladinAura = (function() {
     }
     if (
       value != undefined &&
-      // so long as dontOverwrite and goingToOverwrite are not both true
-      !(dontOverwrite == true || goingToOverwrite != false)
+      // so long as goingToOverwrite and dontOverwrite are not both true
+      (goingToOverwrite == false || dontOverwrite != true)
     ) {
       attr.setWithWorker('current', value);
     }
