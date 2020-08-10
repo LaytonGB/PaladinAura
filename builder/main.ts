@@ -716,7 +716,7 @@ const PaladinAura = (function() {
 
   /**
    * Sets or removes a marker on a token based on the bonus it has started
-   * or stopped recieving respectively.
+   * or stopped receiving respectively.
    * @param token A token object.
    * @param value A number.
    */
@@ -766,7 +766,7 @@ const PaladinAura = (function() {
 
   /**
    * Returns the array after it has been sorted alphabetically, keeping
-   * capitalised items at the front of the array.
+   * capitalized items at the front of the array.
    * @param arr An array of objects or strings.
    * @param prop Optional. The property to sort by (for objects).
    */
