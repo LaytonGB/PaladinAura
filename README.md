@@ -2,6 +2,8 @@
 
 [![Version Button](https://badgen.net/https/raw.githubusercontent.com/LaytonGB/PaladinAura/master/builder/package.json?cache=300)](https://raw.githubusercontent.com/LaytonGB/PaladinAura/master/PaladinAura.js) [![Sponsor Button](https://badgen.net/badge/Sponsor%20me%20a%20Coffee/PayPal/?color=pink)](https://paypal.me/LaytonGB)
 
+## **WARNING:** This project is depreciated in favour of [the reworked version](https://gitlab.com/LaytonGB/Paladin-Aura-API). This project will not be recieving updates.
+
 A roll20 API for 5E D&D that automatically adjusts the saving throw bonuses of Paladins and those close to them.
 
 The API takes into account the paladin's level, and whether the bonus has already been applied. After rigorous testing there have been no accidental double-applies of bonuses.
